@@ -1,0 +1,14 @@
+/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/debug/deps/thiserror-712a65daad5721a2.d: /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/lib.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/aserror.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/display.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/var.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/private.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/target/debug/build/thiserror-e1b60979f16b3b6b/out/private.rs
+
+/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/debug/deps/libthiserror-712a65daad5721a2.rlib: /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/lib.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/aserror.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/display.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/var.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/private.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/target/debug/build/thiserror-e1b60979f16b3b6b/out/private.rs
+
+/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/debug/deps/libthiserror-712a65daad5721a2.rmeta: /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/lib.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/aserror.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/display.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/var.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/private.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/target/debug/build/thiserror-e1b60979f16b3b6b/out/private.rs
+
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/lib.rs:
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/aserror.rs:
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/display.rs:
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/var.rs:
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/private.rs:
+/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/debug/build/thiserror-e1b60979f16b3b6b/out/private.rs:
+
+# env-dep:OUT_DIR=/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/debug/build/thiserror-e1b60979f16b3b6b/out
