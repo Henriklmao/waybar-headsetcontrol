@@ -1,0 +1,14 @@
+/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/deps/serde-eac4851a7b506831.d: /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/build/serde-2bfb92bfee02571d/out/private.rs
+
+/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/deps/libserde-eac4851a7b506831.rlib: /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/build/serde-2bfb92bfee02571d/out/private.rs
+
+/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/deps/libserde-eac4851a7b506831.rmeta: /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/build/serde-2bfb92bfee02571d/out/private.rs
+
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/home/henrik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/build/serde-2bfb92bfee02571d/out/private.rs:
+
+# env-dep:OUT_DIR=/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/build/serde-2bfb92bfee02571d/out

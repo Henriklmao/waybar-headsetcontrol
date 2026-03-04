@@ -1,0 +1,7 @@
+---
+Language: Cpp
+BasedOnStyle: WebKit
+AlignConsecutiveMacros: true
+AlignConsecutiveAssignments: true
+InsertNewlineAtEOF: true
+...
