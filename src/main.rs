@@ -134,11 +134,11 @@ fn update_battery(state: &mut UiState) {
             if let Ok(level) = num_str.parse::<i32>() {
                 state.battery = level;
                 state.battery_status = if level > 50 {
-                    "🟢 Good".to_string()
+                    "Good".to_string()
                 } else if level >= 15 {
-                    "🟡 Medium".to_string()
+                    "Medium".to_string()
                 } else {
-                    "🔴 Low".to_string()
+                    "Low".to_string()
                 };
                 return;
             }
@@ -146,5 +146,5 @@ fn update_battery(state: &mut UiState) {
     }
 
     state.battery = -1;
-    state.battery_status = "❌ Error".to_string();
+    state.battery_status = "Error".to_string();
 }
