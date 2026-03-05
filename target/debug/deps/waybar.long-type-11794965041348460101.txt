@@ -1,0 +1,1 @@
+waybar_cffi::gtk::glib::translate::Borrowed<Container>

@@ -1,9 +1,9 @@
 use serde::Deserialize;
 use std::process::Command;
 use waybar_cffi::{waybar_module, InitInfo, Module};
-use gtk::prelude::*;
-use gtk::{Label, EventBox};
-use glib;
+use waybar_cffi::gtk::prelude::*;
+use waybar_cffi::gtk::{Label, EventBox};
+use waybar_cffi::gtk::glib;
 
 struct WbHeadsetControl;
 
