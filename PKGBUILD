@@ -1,6 +1,6 @@
 # Maintainer: Your Name <you@example.com>
 pkgname=wb-headsetcontrol
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc="Waybar integration for HeadsetControl - display battery and control sidetone"
 arch=('x86_64')
