@@ -11,6 +11,8 @@ pub struct KeyConfig {
     pub full: char,
     pub none: char,
     pub quit: char,
+    pub config: char,
+    pub verbose: char,
 }
 
 impl Default for KeyConfig {
@@ -23,6 +25,8 @@ impl Default for KeyConfig {
             full: 'f',
             none: 'e',
             quit: 'q',
+            config: 'c',
+            verbose: 'v',
         }
     }
 }
@@ -30,6 +34,8 @@ impl Default for KeyConfig {
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigFile {
     keys: KeyConfig,
+    #[serde(default)]
+    default_sidetone: u8,
 }
 
 pub fn get_config_path() -> PathBuf {
@@ -49,10 +55,31 @@ pub fn load_config() -> KeyConfig {
         }
     }
     
-    KeyConfig::default()
+    // Auto-create config with defaults if missing
+    let config = KeyConfig::default();
+    let _ = save_config_full(&config, 0);
+    config
+}
+
+pub fn load_default_sidetone() -> u8 {
+    let path = get_config_path();
+    
+    if path.exists() {
+        if let Ok(content) = fs::read_to_string(&path) {
+            if let Ok(config_file) = toml::from_str::<ConfigFile>(&content) {
+                return config_file.default_sidetone;
+            }
+        }
+    }
+    
+    0
 }
 
 pub fn save_config(keys: &KeyConfig) -> std::io::Result<()> {
+    save_config_full(keys, 0)
+}
+
+fn save_config_full(keys: &KeyConfig, default_sidetone: u8) -> std::io::Result<()> {
     let path = get_config_path();
     
     if let Some(parent) = path.parent() {
@@ -61,6 +88,7 @@ pub fn save_config(keys: &KeyConfig) -> std::io::Result<()> {
     
     let config_file = ConfigFile {
         keys: keys.clone(),
+        default_sidetone,
     };
     
     let content = toml::to_string_pretty(&config_file)
@@ -74,8 +102,35 @@ pub fn interactive_config() -> std::io::Result<()> {
     use std::io::{self, Write};
     
     let mut config = load_config();
+    let mut default_sidetone = load_default_sidetone();
     
-    println!("\n=== Headset Control Key Configuration ===\n");
+    println!("\n=== Headset Control Configuration ===\n");
+    
+    // Configure default sidetone
+    loop {
+        print!("Default sidetone level (0-128): [{}] ", default_sidetone);
+        io::stdout().flush()?;
+        
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        
+        let trimmed = input.trim();
+        if trimmed.is_empty() {
+            break;
+        }
+        if let Ok(level) = trimmed.parse::<u8>() {
+            if level <= 128 {
+                default_sidetone = level;
+                break;
+            } else {
+                println!("Please enter a value between 0 and 128");
+            }
+        } else {
+            println!("Invalid input");
+        }
+    }
+    
+    println!("\n=== Key Bindings ===\n");
     
     let keys_to_configure = vec![
         ("dec1", "Decrease sidetone by 1", &mut config.dec1),
@@ -84,6 +139,8 @@ pub fn interactive_config() -> std::io::Result<()> {
         ("inc10", "Increase sidetone by 10", &mut config.inc10),
         ("full", "Set sidetone to full (128)", &mut config.full),
         ("none", "Set sidetone to none (0)", &mut config.none),
+        ("config", "Open configuration menu", &mut config.config),
+        ("verbose", "Toggle verbose mode", &mut config.verbose),
         ("quit", "Quit the application", &mut config.quit),
     ];
     
@@ -102,7 +159,23 @@ pub fn interactive_config() -> std::io::Result<()> {
         }
     }
     
-    save_config(&config)?;
-    println!("\nConfiguration saved to {:?}", get_config_path());
-    Ok(())
+    // Ask to save
+    println!("\nSave changes? (w - write, esc - discard)");
+    loop {
+        print!("> ");
+        io::stdout().flush()?;
+        
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        let trimmed = input.trim();
+        
+        if trimmed.to_lowercase() == "w" {
+            save_config_full(&config, default_sidetone)?;
+            println!("Configuration saved to {:?}", get_config_path());
+            return Ok(());
+        } else if trimmed.is_empty() || trimmed.to_lowercase() == "esc" {
+            println!("Changes discarded");
+            return Ok(());
+        }
+    }
 }

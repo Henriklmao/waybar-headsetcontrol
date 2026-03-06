@@ -19,11 +19,9 @@ impl Module for WbHeadsetControl {
         event_box.add(&label);
         container.add(&event_box);
 
-        // Click handler
+        // Click handler - open TUI
         event_box.connect_button_press_event(|_, _| {
-            let _ = Command::new("bash")
-                .arg("-c")
-                .arg("val=$(yad --scale --min-value=0 --max-value=127 --step=1 --title='Headset Sidetone' --text='Adjust Sidetone Level' --width=300 --button='Set:0' --button='Cancel:1'); if [ $? -eq 0 ] && [ -n \"$val\" ]; then waybar-headsetcontrol-cmd -s \"$val\"; fi")
+            let _ = Command::new("wb-headset-tui")
                 .spawn();
             false.into()
         });

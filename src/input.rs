@@ -10,6 +10,8 @@ pub enum Action {
     IncBy10,
     SetFull,
     SetNone,
+    ToggleVerbose,
+    Config,
     Quit,
     None,
 }
@@ -41,6 +43,10 @@ fn key_to_action(key: KeyEvent, keys: &KeyConfig) -> Action {
             Action::SetNone
         } else if lower == keys.quit {
             Action::Quit
+        } else if lower == keys.verbose {
+            Action::ToggleVerbose
+        } else if lower == keys.config {
+            Action::Config
         } else {
             Action::None
         }
