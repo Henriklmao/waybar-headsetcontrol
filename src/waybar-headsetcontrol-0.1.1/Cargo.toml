@@ -1,0 +1,23 @@
+[package]
+name = "waybar"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "wb-headset"
+path = "src/main.rs"
+
+[lib]
+name = "wb_headsetcontrol"
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+waybar-cffi = "0.1.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+ratatui = "0.27"
+crossterm = "0.27"
+dirs = "5.0"
+
