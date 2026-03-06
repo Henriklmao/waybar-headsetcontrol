@@ -5,6 +5,16 @@ WAYBAR_CONFIG="${HOME}/.config/waybar/config.jsonc"
 MODULE_NAME="custom/headsetcontrol"
 BINARY_PATH="/usr/bin/wb-headset"
 
+# Detect available terminal
+if command -v kitty &> /dev/null; then
+    TERMINAL_CMD="kitty"
+elif command -v alacritty &> /dev/null; then
+    TERMINAL_CMD="alacritty"
+else
+    echo "Error: Neither kitty nor alacritty found"
+    exit 1
+fi
+
 # Check if Waybar config exists
 if [ ! -f "$WAYBAR_CONFIG" ]; then
     echo "Waybar config not found at $WAYBAR_CONFIG - skipping auto-config"
@@ -17,7 +27,7 @@ if grep -q "\"$MODULE_NAME\"" "$WAYBAR_CONFIG"; then
     exit 0
 fi
 
-echo "Adding wb-headsetcontrol to Waybar..."
+echo "Adding wb-headsetcontrol to Waybar (using $TERMINAL_CMD)..."
 
 # Add module to modules-right array (after first module for safety)
 sed -i '/modules-right.*\[/,/\]/s/"cpu"/"'$MODULE_NAME'", "cpu"/' "$WAYBAR_CONFIG"
@@ -32,9 +42,10 @@ if ! grep -q "\"$MODULE_NAME\":" "$WAYBAR_CONFIG"; then
     "exec": "$BINARY_PATH --waybar-status",
     "return-type": "json",
     "interval": 10,
-    "format": "{icon}",
-    "format-icons": ["󰋎"],
-    "on-click": "alacritty -e $BINARY_PATH"
+    "format": "{text}",
+    "tooltip": true,
+    "on-click": "$TERMINAL_CMD $BINARY_PATH",
+    "on-right-click": "bash -c '$BINARY_PATH --toggle-sidetone &'"
   },
 EOF
 fi

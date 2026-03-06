@@ -293,7 +293,7 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
                 };
                 
                 let text = format!("<span foreground=\\\"{}\\\" font_weight=\\\"bold\\\">󰋎</span>", color);
-                println!("{{\"text\": \"{}\", \"class\": \"{}\", \"tooltip\": \"{}\", \"on-click\": \"wb-headset\", \"on-right-click\": \"wb-headset --toggle-sidetone\"}}", text, class, tooltip);
+                println!("{{\"text\": \"{}\", \"class\": \"{}\", \"tooltip\": \"{}\"}}", text, class, tooltip);
             } else {
                 println!("{{\"text\": \"<span foreground=\\\"#ff0000\\\" font_weight=\\\"bold\\\">󰋎</span>\", \"class\": \"headset-error\", \"tooltip\": \"Headset not found\"}}");
             }
