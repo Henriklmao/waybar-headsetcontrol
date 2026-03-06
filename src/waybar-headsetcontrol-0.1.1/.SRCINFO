@@ -1,6 +1,6 @@
 pkgbase = wb-headsetcontrol
 	pkgdesc = Waybar integration for HeadsetControl - display battery and control sidetone
-	pkgver = 0.1.3
+	pkgver = 0.1.1
 	pkgrel = 1
 	url = https://github.com/Henriklmao/waybar-headsetcontrol
 	arch = x86_64
@@ -9,8 +9,8 @@ pkgbase = wb-headsetcontrol
 	makedepends = rust
 	depends = headsetcontrol
 	depends = gtk3
-	depends = alacrity
-	source = wb-headsetcontrol-0.1.3.tar.gz::https://github.com/Henriklmao/waybar-headsetcontrol/archive/refs/tags/v0.1.1.tar.gz
+	depends = alacritty
+	source = wb-headsetcontrol-0.1.1.tar.gz::https://github.com/Henriklmao/waybar-headsetcontrol/archive/refs/tags/v0.1.1.tar.gz
 	sha256sums = SKIP
 
 pkgname = wb-headsetcontrol
