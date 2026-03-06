@@ -2,7 +2,7 @@
 
 A simple Rust and [ratatui](https://ratatui.rs/) based integration of HeadsetControl features into Waybar. Shows wireless headphone battery status with colored icons and provides an interactive TUI for sidetone control.
 
-> Only works with headphones supported by HeadsetControl. See: [here](https://github.com/Sapd/HeadsetControl/tree/master?tab=readme-ov-file#supported-devices)
+> Only works with headphones supported by HeadsetControl. See: [the official repo](https://github.com/Sapd/HeadsetControl/tree/master?tab=readme-ov-file#supported-devices)
 
 ## Features
 

@@ -18,7 +18,7 @@ build() {
 
 package() {
     cd "$srcdir/waybar-headsetcontrol-$pkgver" || return
-    install -Dm 755 "target/release/wb-headset" "$pkgdir/usr/bin/wb-headset"
+    install -Dm 755 "target/release/wb-headset" "$pkgdir/usr/bin/wb-headsetcontrol"
     install -Dm 755 "install-waybar-config.sh" "$pkgdir/usr/share/wb-headsetcontrol/install-waybar-config.sh"
 }
 
@@ -33,7 +33,7 @@ post_install() {
     echo "Default configuration created at ~/.config/wb-headsetcontrol/config.toml"
     echo "Press 'c' in the TUI to configure keybindings and default sidetone."
     echo ""
-    echo "Usage: wb-headset"
+    echo "Usage: wb-headsetcontrol"
 }
 
 post_upgrade() {

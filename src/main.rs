@@ -263,11 +263,17 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
             if hc_output.device_count > 0 {
                 let device = &hc_output.devices[0];
                 
-                // Check if sidetone capability exists
-                let has_sidetone = device.capabilities_str.contains(&"sidetone".to_string());
-                
                 let battery_level = device.battery.level;
                 let battery_status = &device.battery.status;
+                
+                // Don't show anything if battery is unavailable
+                if battery_status == "BATTERY_UNAVAILABLE" {
+                    println!("{{\"text\": \"\", \"class\": \"headset-unavailable\"}}");
+                    return Ok(());
+                }
+                
+                // Check if sidetone capability exists
+                let has_sidetone = device.capabilities_str.contains(&"sidetone".to_string());
                 
                 // Determine color and class
                 let (color, class) = if battery_status == "BATTERY_CHARGING" {

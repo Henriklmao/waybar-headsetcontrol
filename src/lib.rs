@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::process::Command;
 use waybar_cffi::{waybar_module, InitInfo, Module};
 use waybar_cffi::gtk::prelude::*;
-use waybar_cffi::gtk::{Label, EventBox};
+use waybar_cffi::gtk::{Label, EventBox, Container};
 use waybar_cffi::gtk::glib;
 
 struct WbHeadsetControl;
@@ -27,12 +27,14 @@ impl Module for WbHeadsetControl {
         });
 
         let label_clone = label.clone();
+        let event_box_clone = event_box.clone();
+        let container_clone = container.clone();
         glib::timeout_add_seconds_local(10, move || {
-            update_battery(&label_clone);
+            update_battery(&label_clone, &event_box_clone, &container_clone);
             glib::ControlFlow::Continue
         });
 
-        update_battery(&label);
+        update_battery(&label, &event_box, &container);
         
         container.show_all();
 
@@ -40,14 +42,22 @@ impl Module for WbHeadsetControl {
     }
 }
 
-fn update_battery(label: &Label) {
-    let output = Command::new("waybar-headsetcontrol-cmd")
+fn update_battery(label: &Label, event_box: &EventBox, container: &Container) {
+    let output = Command::new("headsetcontrol")
         .arg("-b")
         .output();
 
     match output {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
+            
+            if stdout.contains("BATTERY_UNAVAILABLE") {
+                container.remove(event_box);
+                return;
+            }
+            
+            // Make sure event_box is visible and in container
+            event_box.show();
             
             let mut level = -1;
             if stdout.contains("Charging") {
@@ -67,13 +77,16 @@ fn update_battery(label: &Label) {
 
             if level != -1 {
                 let color = if level > 50 { "green" } else if level >= 15 { "yellow" } else { "red" };
-                label.set_markup(&format!("<span color='{}'></span> {}%", color, level));
+                label.set_markup(&format!("<span color='{}'></span> {}%", color, level));
+                label.set_tooltip_text(Some(&format!("Battery: {}%", level)));
             } else {
-                label.set_markup("<span color='gray'> ?</span>");
+                label.set_markup("<span color='gray'> ?</span>");
+                label.set_tooltip_text(Some("Battery: Unknown"));
             }
         },
         Err(_) => {
-            label.set_markup("<span color='red'> Err</span>");
+            label.set_markup("<span color='red'> Err</span>");
+            label.set_tooltip_text(Some("Battery: Error"));
         }
     }
 }
