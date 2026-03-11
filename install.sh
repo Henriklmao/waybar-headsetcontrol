@@ -6,6 +6,17 @@ INSTALL_DIR="${HOME}/.local/bin/wb-headsetcontrol"
 BIN_NAME="wb-headset"
 WAYBAR_CONFIG="${HOME}/.config/waybar/config.jsonc"
 
+# Detect preferred terminal (alacritty preferred, then kitty)
+if command -v alacritty >/dev/null 2>&1; then
+    TERMINAL="alacritty -e"
+elif command -v kitty >/dev/null 2>&1; then
+    TERMINAL="kitty -e"
+else
+    TERMINAL="alacritty -e"
+fi
+
+ON_CLICK="$TERMINAL $INSTALL_DIR/$BIN_NAME"
+
 echo "=== Waybar HeadsetControl Installer ==="
 
 # 1. Build Rust Module
@@ -34,8 +45,8 @@ echo "[4/4] Updating Waybar config..."
 if [ -f "$WAYBAR_CONFIG" ]; then
     if grep -q "\"custom/headsetcontrol\"" "$WAYBAR_CONFIG"; then
         # Config entry exists, update it with proper escaping
-        sed -i 's|"exec": "[^"]*--waybar-status[^"]*"|"exec": "'$INSTALL_DIR/$BIN_NAME' --waybar-status"|g' "$WAYBAR_CONFIG"
-        sed -i 's|"on-click": "alacritty -e [^"]*wb-headset[^"]*"|"on-click": "alacritty -e '$INSTALL_DIR/$BIN_NAME'"|g' "$WAYBAR_CONFIG"
+        sed -i "s|\"exec\": \"[^\"]*--waybar-status[^\"]*\"|\"exec\": \"${INSTALL_DIR}/${BIN_NAME} --waybar-status\"|g" "$WAYBAR_CONFIG"
+        sed -i "s|\"on-click\": \"[^\"]*wb-headset[^\"]*\"|\"on-click\": \"${ON_CLICK}\"|g" "$WAYBAR_CONFIG"
         echo "  ✓ Updated Waybar config"
     else
         echo "  ⚠ custom/headsetcontrol not found in Waybar config - manual setup required"
@@ -60,10 +71,10 @@ else
     echo "✓ Setup complete - manually add the following to your Waybar config:"
     echo ""
     echo '  "custom/headsetcontrol": {'
-    echo '    "exec": "'$INSTALL_DIR/$BIN_NAME' --waybar-status",'
+    echo "    \"exec\": \"${INSTALL_DIR}/${BIN_NAME} --waybar-status\"," 
     echo '    "return-type": "json",'
     echo '    "interval": 10,'
-    echo '    "on-click": "alacritty -e '$INSTALL_DIR/$BIN_NAME'",'
+    echo "    \"on-click\": \"${ON_CLICK}\"," 
     echo '    "tooltip-format": "Headset Battery\nClick to open menu"'
     echo '  }'
 fi

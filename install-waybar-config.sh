@@ -5,13 +5,13 @@ WAYBAR_CONFIG="${HOME}/.config/waybar/config.jsonc"
 MODULE_NAME="custom/headsetcontrol"
 BINARY_PATH="/usr/bin/wb-headset"
 
-# Detect available terminal
-if command -v kitty &> /dev/null; then
-    TERMINAL_CMD="kitty"
-elif command -v alacritty &> /dev/null; then
+# Detect available terminal (alacritty preferred, then kitty)
+if command -v alacritty &> /dev/null; then
     TERMINAL_CMD="alacritty"
+elif command -v kitty &> /dev/null; then
+    TERMINAL_CMD="kitty"
 else
-    echo "Error: Neither kitty nor alacritty found"
+    echo "Error: Neither alacritty nor kitty found"
     exit 1
 fi
 
@@ -58,4 +58,4 @@ if pgrep -f "^/usr/bin/waybar" > /dev/null 2>&1; then
     waybar &
 fi
 
-echo "✅ Waybar configuration updated!"
+echo "✓ Waybar configuration updated!"

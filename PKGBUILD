@@ -1,41 +1,31 @@
-# Maintainer: Your Name <you@example.com>
-pkgname=wb-headsetcontrol
-pkgver=0.1.3
+# Maintainer: Henrik Bernhardt <57109108+Henriklmao@users.noreply.github.com >
+pkgname=wb-headsetcontrol-git
+pkgver=r1.g
 pkgrel=1
 pkgdesc="Waybar integration for HeadsetControl - display battery and control sidetone"
 arch=('x86_64')
 url="https://github.com/Henriklmao/waybar-headsetcontrol"
-license=('MIT')
-depends=('headsetcontrol' 'gtk3' 'alacritty')
-makedepends=('cargo' 'rust')
-source=("$pkgname-$pkgver.tar.gz::https://github.com/Henriklmao/waybar-headsetcontrol/archive/refs/tags/v$pkgver.tar.gz")
+license=('GPL3')
+depends=('headsetcontrol')
+makedepends=('cargo' 'rust' 'git')
+install=wb-headsetcontrol.install
+source=('waybar-headsetcontrol::git+https://github.com/Henriklmao/waybar-headsetcontrol.git')
 sha256sums=('SKIP')
 
+pkgver() {
+    cd "$srcdir/waybar-headsetcontrol" || exit
+    local release=$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)
+    local revision=$(git rev-list --count HEAD)
+    printf "%s.r%s" "$release" "$revision"
+}
+
 build() {
-    cd "$srcdir/waybar-headsetcontrol-$pkgver" || return
+    cd "$srcdir/waybar-headsetcontrol" || return
     cargo build --release
 }
 
 package() {
-    cd "$srcdir/waybar-headsetcontrol-$pkgver" || return
-    install -Dm 755 "target/release/wb-headset" "$pkgdir/usr/bin/wb-headsetcontrol"
+    cd "$srcdir/waybar-headsetcontrol" || return
+    install -Dm 755 "target/release/wb-headset" "$pkgdir/usr/bin/wb-headset"
     install -Dm 755 "install-waybar-config.sh" "$pkgdir/usr/share/wb-headsetcontrol/install-waybar-config.sh"
-}
-
-post_install() {
-    echo "=== wb-headsetcontrol installed ==="
-    echo ""
-    echo "Configuring Waybar..."
-    bash /usr/share/wb-headsetcontrol/install-waybar-config.sh
-    echo ""
-    echo "✅ Installation complete!"
-    echo ""
-    echo "Default configuration created at ~/.config/wb-headsetcontrol/config.toml"
-    echo "Press 'c' in the TUI to configure keybindings and default sidetone."
-    echo ""
-    echo "Usage: wb-headsetcontrol"
-}
-
-post_upgrade() {
-    post_install
 }
