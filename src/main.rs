@@ -286,10 +286,14 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
                     ("#ff0000", "headset-low")
                 };
                 
-                let tooltip = if has_sidetone {
-                    format!("Battery: {}%", battery_level)
+                let tooltip = if battery_status == "BATTERY_CHARGING" {
+                    "󰂄 Charging".to_string()
+                } else if battery_level >= 50 {
+                    format!("󱊣 {}%", battery_level)
+                } else if battery_level >= 15 {
+                    format!("󱊢 {}%", battery_level)
                 } else {
-                    format!("Battery: {}% | Sidetone: not available", battery_level)
+                    format!("󱊡 {}%", battery_level)
                 };
                 
                 let text = format!("<span foreground=\\\"{}\\\" font_weight=\\\"bold\\\">󰋎</span>", color);
