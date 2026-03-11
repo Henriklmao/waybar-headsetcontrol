@@ -1,1 +1,0 @@
-/home/henrik/Documents/GitHub/waybar-headsetcontrol/target/release/waybar: /home/henrik/Documents/GitHub/waybar-headsetcontrol/src/config.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/src/input.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/src/main.rs /home/henrik/Documents/GitHub/waybar-headsetcontrol/src/ui.rs
