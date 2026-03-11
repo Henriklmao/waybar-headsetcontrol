@@ -21,12 +21,12 @@ A simple Rust and [ratatui](https://ratatui.rs/) based integration of HeadsetCon
 
 Make sure that you have a [Nerdfont](https://www.nerdfonts.com/) installed and configured in Waybar to see the icons.
 
-### AUR (Arch User Repository)
+### [AUR](https://aur.archlinux.org/packages/wb-headsetcontrol-git)
 
 ```bash
-yay -S wb-headsetcontrol
+yay -S wb-headsetcontrol-git
 # or
-paru -S wb-headsetcontrol
+paru -S wb-headsetcontrol-git
 ```
 
 After installation, the post_install hook will display instructions for Waybar configuration.
