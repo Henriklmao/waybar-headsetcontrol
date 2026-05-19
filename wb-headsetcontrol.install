@@ -9,7 +9,7 @@ post_install() {
     echo "Default configuration created at ~/.config/wb-headsetcontrol/config.toml"
     echo "Press 'c' in the TUI to configure keybindings and default sidetone."
     echo ""
-    echo "Usage: wb-headsetcontrol"
+    echo "Usage: wb-headset"
 }
 
 post_upgrade() {
