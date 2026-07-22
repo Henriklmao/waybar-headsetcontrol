@@ -40,17 +40,17 @@ struct Battery {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-    
+
     if args.len() > 1 && args[1] == "--config" {
         config::interactive_config()?;
         return Ok(());
     }
-    
+
     if args.len() > 1 && args[1] == "--toggle-sidetone" {
         toggle_sidetone()?;
         return Ok(());
     }
-    
+
     if args.len() > 1 && args[1] == "--waybar-status" {
         return waybar_status();
     }
@@ -72,12 +72,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         device_name: String::new(),
         has_sidetone: true,
     };
-    
+
     // Apply default sidetone to headset if it's not 0
     if default_sidetone > 0 {
         set_sidetone(default_sidetone);
     }
-    
+
     update_battery(&mut state);
 
     let result = run_app(&mut terminal, &mut keys, &mut state);
@@ -136,14 +136,14 @@ fn run_app(
                 disable_raw_mode()?;
                 execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
                 terminal.show_cursor()?;
-                
+
                 config::interactive_config()?;
-                
+
                 enable_raw_mode()?;
                 execute!(terminal.backend_mut(), EnterAlternateScreen)?;
                 terminal.hide_cursor()?;
                 terminal.clear()?;
-                
+
                 *keys = config::load_config();
                 update_battery(state);
             }
@@ -157,37 +157,22 @@ fn run_app(
     Ok(())
 }
 
-fn get_sidetone() -> u8 {
-    Command::new("headsetcontrol")
-        .arg("-g")
-        .output()
-        .ok()
-        .and_then(|output| {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            stdout
-                .trim()
-                .split_whitespace()
-                .find_map(|s| s.parse::<u8>().ok())
-        })
-        .unwrap_or(0)
-}
-
 fn toggle_sidetone() -> Result<(), Box<dyn std::error::Error>> {
     let default_sidetone = config::load_default_sidetone();
-    
+
     if default_sidetone == 0 {
         return Ok(());
     }
-    
+
     // Use a simple state file to track if sidetone is currently on
     let state_file = dirs::home_dir()
         .map(|p| p.join(".cache/wb-headsetcontrol-sidetone-state"))
         .unwrap_or_default();
-    
+
     let is_on = std::fs::read_to_string(&state_file)
         .map(|s| s.trim() == "on")
         .unwrap_or(false);
-    
+
     if is_on {
         // Turn off
         set_sidetone(0);
@@ -197,7 +182,7 @@ fn toggle_sidetone() -> Result<(), Box<dyn std::error::Error>> {
         set_sidetone(default_sidetone);
         let _ = std::fs::write(&state_file, "on");
     }
-    
+
     Ok(())
 }
 
@@ -221,10 +206,10 @@ fn update_battery(state: &mut UiState) {
         if let Ok(hc_output) = serde_json::from_str::<HeadsetControlOutput>(&stdout) {
             if hc_output.device_count > 0 {
                 let device = &hc_output.devices[0];
-                
+
                 // Extract device name
                 state.device_name = device.product.clone();
-                
+
                 // Extract battery info
                 state.battery = device.battery.level;
                 state.battery_status = if device.battery.status == "BATTERY_CHARGING" {
@@ -236,10 +221,10 @@ fn update_battery(state: &mut UiState) {
                 } else {
                     "Low".to_string()
                 };
-                
+
                 // Check sidetone capability
                 state.has_sidetone = device.capabilities_str.contains(&"sidetone".to_string());
-                
+
                 return;
             }
         }
@@ -258,23 +243,20 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
         .output()
     {
         let stdout = String::from_utf8_lossy(&output.stdout);
-        
+
         if let Ok(hc_output) = serde_json::from_str::<HeadsetControlOutput>(&stdout) {
             if hc_output.device_count > 0 {
                 let device = &hc_output.devices[0];
-                
+
                 let battery_level = device.battery.level;
                 let battery_status = &device.battery.status;
-                
+
                 // Don't show anything if battery is unavailable
                 if battery_status == "BATTERY_UNAVAILABLE" {
                     println!("{{\"text\": \"\", \"class\": \"headset-unavailable\"}}");
                     return Ok(());
                 }
-                
-                // Check if sidetone capability exists
-                let has_sidetone = device.capabilities_str.contains(&"sidetone".to_string());
-                
+
                 // Determine color and class
                 let (color, class) = if battery_status == "BATTERY_CHARGING" {
                     ("#0066ff", "headset-charging")
@@ -285,7 +267,7 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
                 } else {
                     ("#ff0000", "headset-low")
                 };
-                
+
                 let tooltip = if battery_status == "BATTERY_CHARGING" {
                     "󰂄 Charging".to_string()
                 } else if battery_level >= 50 {
@@ -295,9 +277,15 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
                 } else {
                     format!("󱊡 {}%", battery_level)
                 };
-                
-                let text = format!("<span foreground=\\\"{}\\\" font_weight=\\\"bold\\\">󰋎</span>", color);
-                println!("{{\"text\": \"{}\", \"class\": \"{}\", \"tooltip\": \"{}\"}}", text, class, tooltip);
+
+                let text = format!(
+                    "<span foreground=\\\"{}\\\" font_weight=\\\"bold\\\">󰋎</span>",
+                    color
+                );
+                println!(
+                    "{{\"text\": \"{}\", \"class\": \"{}\", \"tooltip\": \"{}\"}}",
+                    text, class, tooltip
+                );
             } else {
                 println!("{{\"text\": \"<span foreground=\\\"#ff0000\\\" font_weight=\\\"bold\\\">󰋎</span>\", \"class\": \"headset-error\", \"tooltip\": \"Headset not found\"}}");
             }

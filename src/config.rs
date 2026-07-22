@@ -46,7 +46,7 @@ pub fn get_config_path() -> PathBuf {
 
 pub fn load_config() -> KeyConfig {
     let path = get_config_path();
-    
+
     if path.exists() {
         if let Ok(content) = fs::read_to_string(&path) {
             if let Ok(config_file) = toml::from_str::<ConfigFile>(&content) {
@@ -54,7 +54,7 @@ pub fn load_config() -> KeyConfig {
             }
         }
     }
-    
+
     // Auto-create config with defaults if missing
     let config = KeyConfig::default();
     let _ = save_config_full(&config, 0);
@@ -63,7 +63,7 @@ pub fn load_config() -> KeyConfig {
 
 pub fn load_default_sidetone() -> u8 {
     let path = get_config_path();
-    
+
     if path.exists() {
         if let Ok(content) = fs::read_to_string(&path) {
             if let Ok(config_file) = toml::from_str::<ConfigFile>(&content) {
@@ -71,49 +71,44 @@ pub fn load_default_sidetone() -> u8 {
             }
         }
     }
-    
-    0
-}
 
-pub fn save_config(keys: &KeyConfig) -> std::io::Result<()> {
-    save_config_full(keys, 0)
+    0
 }
 
 fn save_config_full(keys: &KeyConfig, default_sidetone: u8) -> std::io::Result<()> {
     let path = get_config_path();
-    
+
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    
+
     let config_file = ConfigFile {
         keys: keys.clone(),
         default_sidetone,
     };
-    
-    let content = toml::to_string_pretty(&config_file)
-        .unwrap_or_else(|_| String::new());
-    
+
+    let content = toml::to_string_pretty(&config_file).unwrap_or_else(|_| String::new());
+
     fs::write(&path, content)?;
     Ok(())
 }
 
 pub fn interactive_config() -> std::io::Result<()> {
     use std::io::{self, Write};
-    
+
     let mut config = load_config();
     let mut default_sidetone = load_default_sidetone();
-    
+
     println!("\n=== Headset Control Configuration ===\n");
-    
+
     // Configure default sidetone
     loop {
         print!("Default sidetone level (0-128): [{}] ", default_sidetone);
         io::stdout().flush()?;
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        
+
         let trimmed = input.trim();
         if trimmed.is_empty() {
             break;
@@ -129,9 +124,9 @@ pub fn interactive_config() -> std::io::Result<()> {
             println!("Invalid input");
         }
     }
-    
+
     println!("\n=== Key Bindings ===\n");
-    
+
     let keys_to_configure = vec![
         ("dec1", "Decrease sidetone by 1", &mut config.dec1),
         ("dec10", "Decrease sidetone by 10", &mut config.dec10),
@@ -143,14 +138,14 @@ pub fn interactive_config() -> std::io::Result<()> {
         ("verbose", "Toggle verbose mode", &mut config.verbose),
         ("quit", "Quit the application", &mut config.quit),
     ];
-    
+
     for (key_name, description, key_ref) in keys_to_configure {
         print!("{} ({}): [{}] ", description, key_name, key_ref);
         io::stdout().flush()?;
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        
+
         let trimmed = input.trim();
         if !trimmed.is_empty() {
             if let Some(c) = trimmed.chars().next() {
@@ -158,17 +153,17 @@ pub fn interactive_config() -> std::io::Result<()> {
             }
         }
     }
-    
+
     // Ask to save
     println!("\nSave changes? (w - write, esc - discard)");
     loop {
         print!("> ");
         io::stdout().flush()?;
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
         let trimmed = input.trim();
-        
+
         if trimmed.to_lowercase() == "w" {
             save_config_full(&config, default_sidetone)?;
             println!("Configuration saved to {:?}", get_config_path());

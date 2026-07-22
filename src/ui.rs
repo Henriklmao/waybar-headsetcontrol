@@ -1,3 +1,4 @@
+use crate::config::KeyConfig;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -5,7 +6,6 @@ use ratatui::{
     widgets::{Block, Borders, Gauge, Paragraph},
     Frame,
 };
-use crate::config::KeyConfig;
 
 pub struct UiState {
     pub sidetone: u8,
@@ -29,12 +29,16 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
             ]
             .as_ref(),
         )
-        .split(f.size());
+        .split(f.area());
 
     // Title
     let title = Paragraph::new("Waybar Headsetcontrol TUI")
         .alignment(Alignment::Center)
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD));
+        .style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        );
     f.render_widget(title, chunks[0]);
 
     // Battery status
@@ -45,31 +49,31 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
     } else {
         Color::Red
     };
-    
+
     let battery_text = if state.battery >= 0 {
-        Line::from(vec![
-            Span::styled(
-                format!("󰋎 Battery: {}% - {}", state.battery, state.device_name),
-                Style::default().fg(battery_color),
-            ),
-        ])
+        Line::from(vec![Span::styled(
+            format!("󰋎 Battery: {}% - {}", state.battery, state.device_name),
+            Style::default().fg(battery_color),
+        )])
     } else {
-        Line::from(vec![
-            Span::styled(
-                "󰋎 Battery: Error",
-                Style::default().fg(Color::Red),
-            ),
-        ])
+        Line::from(vec![Span::styled(
+            "󰋎 Battery: Error",
+            Style::default().fg(Color::Red),
+        )])
     };
-    
-    let battery = Paragraph::new(battery_text)
-        .block(Block::default().borders(Borders::ALL).title("Status"));
+
+    let battery =
+        Paragraph::new(battery_text).block(Block::default().borders(Borders::ALL).title("Status"));
     f.render_widget(battery, chunks[1]);
 
     // Sidetone slider
     if state.has_sidetone {
         let gauge = Gauge::default()
-            .block(Block::default().borders(Borders::ALL).title("Sidetone Level"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Sidetone Level"),
+            )
             .gauge_style(Style::default().fg(Color::Cyan))
             .percent((state.sidetone as f64 / 128.0 * 100.0) as u16)
             .label(format!("{}/128", state.sidetone));
@@ -92,7 +96,7 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
         keys.config.to_uppercase(),
         keys.quit.to_uppercase(),
     );
-    
+
     let help = Paragraph::new(help_text)
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::DarkGray));
