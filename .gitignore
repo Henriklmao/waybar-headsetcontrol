@@ -1,6 +1,5 @@
 *.lock
 /target
-/.github
 /target
 /pkg
 *.gz
