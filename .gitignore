@@ -1,4 +1,3 @@
-*.lock
 /target
 /target
 /pkg
