@@ -55,6 +55,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return waybar_status();
     }
 
+    if args.len() > 1 && args[1] == "--quickshell-status" {
+        return quickshell_status();
+    }
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -295,5 +299,44 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         println!("{{\"text\": \"<span foreground=\\\"#ff0000\\\" font_weight=\\\"bold\\\">󰋎</span>\", \"class\": \"headset-error\", \"tooltip\": \"Headset not found\"}}");
     }
+    Ok(())
+}
+
+fn quickshell_status() -> Result<(), Box<dyn std::error::Error>> {
+    if let Ok(output) = Command::new("headsetcontrol")
+        .arg("-o")
+        .arg("json")
+        .output()
+    {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        if let Ok(hc_output) = serde_json::from_str::<HeadsetControlOutput>(&stdout) {
+            if hc_output.device_count > 0 {
+                let device = &hc_output.devices[0];
+                let battery_level = device.battery.level;
+                let battery_status = &device.battery.status;
+                let charging = battery_status == "BATTERY_CHARGING";
+                let product = &device.product;
+
+                let icon = if charging {
+                    "󰂄"
+                } else if battery_level > 50 {
+                    "󱊣"
+                } else if battery_level >= 15 {
+                    "󱊢"
+                } else {
+                    "󱊡"
+                };
+
+                println!(
+                    "{{\"connected\": true, \"product\": \"{}\", \"battery\": {}, \"charging\": {}, \"icon\": \"{}\"}}",
+                    product, battery_level, charging, icon
+                );
+                return Ok(());
+            }
+        }
+    }
+
+    println!("{{\"connected\": false, \"product\": \"\", \"battery\": -1, \"charging\": false, \"icon\": \"󰋎\"}}");
     Ok(())
 }
