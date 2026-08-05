@@ -166,7 +166,7 @@ fn toggle_sidetone() -> Result<(), Box<dyn std::error::Error>> {
 
     // Use a simple state file to track if sidetone is currently on
     let state_file = dirs::home_dir()
-        .map(|p| p.join(".cache/wb-headsetcontrol-sidetone-state"))
+        .map(|p| p.join(".cache/headset-tui-sidetone-state"))
         .unwrap_or_default();
 
     let is_on = std::fs::read_to_string(&state_file)

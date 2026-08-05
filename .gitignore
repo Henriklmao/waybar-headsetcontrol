@@ -1,7 +1,6 @@
 /target
-/target
+/Cargo.lock
 /pkg
 *.gz
 *.zst
 /wb-headsetcontrol-git
-/target
