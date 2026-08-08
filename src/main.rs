@@ -51,6 +51,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    if args.len() > 1 && args[1] == "--install-waybar" {
+        return install_waybar();
+    }
+
     if args.len() > 1 && args[1] == "--waybar-status" {
         return waybar_status();
     }
@@ -299,6 +303,82 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         println!("{{\"text\": \"<span foreground=\\\"#ff0000\\\" font_weight=\\\"bold\\\">󰋎</span>\", \"class\": \"headset-error\", \"tooltip\": \"Headset not found\"}}");
     }
+    Ok(())
+}
+
+fn install_waybar() -> Result<(), Box<dyn std::error::Error>> {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "~".to_string());
+    let waybar_config = format!("{}/.config/waybar/config.jsonc", home);
+    let module_name = "custom/headsetcontrol";
+
+    // Detect terminal
+    let terminal_cmd = if std::process::Command::new("alacritty").arg("--version").output().is_ok() {
+        "alacritty"
+    } else if std::process::Command::new("kitty").arg("--version").output().is_ok() {
+        "kitty"
+    } else {
+        "alacritty"
+    };
+
+    println!("=== Headset-TUI Waybar Installer ===");
+
+    if !std::path::Path::new(&waybar_config).exists() {
+        println!("  ⚠ Waybar config not found at {}", waybar_config);
+        return Ok(());
+    }
+
+    let content = std::fs::read_to_string(&waybar_config)?;
+    if content.contains(&format!("\"{}\"", module_name)) {
+        println!("  ✓ headset-tui already configured in Waybar");
+        return Ok(());
+    }
+
+    // Determine binary path (use current executable path if possible, fallback to headset-tui)
+    let bin_path = std::env::current_exe()
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| "headset-tui".to_string());
+
+    println!("Adding headset-tui to Waybar (using {})...", terminal_cmd);
+
+    // Simple insertion into modules-right if found, or append block
+    let mut new_content = content.clone();
+    if let Some(pos) = new_content.find("modules-right") {
+        if let Some(bracket) = new_content[pos..].find('[') {
+            let insert_idx = pos + bracket + 1;
+            new_content.insert_str(insert_idx, &format!("\"{}\", ", module_name));
+        }
+    }
+
+    // Add module definition block before last brace
+    if let Some(last_brace) = new_content.rfind('}') {
+        let block = format!(
+            r#"
+  "{}": {{
+    "exec": "{} --waybar-status",
+    "return-type": "json",
+    "interval": 10,
+    "format": "{{text}}",
+    "tooltip": true,
+    "on-click": "{} {}",
+    "on-right-click": "bash -c '{} --toggle-sidetone &'"
+  }},
+"#,
+            module_name, bin_path, terminal_cmd, bin_path, bin_path
+        );
+        new_content.insert_str(last_brace, &block);
+    }
+
+    std::fs::write(&waybar_config, new_content)?;
+    println!("  ✓ Waybar configuration updated successfully!");
+
+    // Restart waybar if running
+    if std::process::Command::new("pgrep").arg("-f").arg("waybar").output().is_ok() {
+        println!("Restarting Waybar...");
+        let _ = std::process::Command::new("pkill").arg("-f").arg("waybar").status();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        let _ = std::process::Command::new("waybar").spawn();
+    }
+
     Ok(())
 }
 
