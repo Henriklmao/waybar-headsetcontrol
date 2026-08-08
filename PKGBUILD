@@ -2,7 +2,7 @@
 pkgname=wb-headsetcontrol-git
 pkgver=r1.g
 pkgrel=1
-pkgdesc="Waybar integration for HeadsetControl - display battery and control sidetone"
+pkgdesc="Waybar and Quickshell integration for HeadsetControl with an interactive TUI"
 arch=('x86_64')
 url="https://github.com/Henriklmao/waybar-headsetcontrol"
 license=('GPL3')
@@ -26,6 +26,5 @@ build() {
 
 package() {
     cd "$srcdir/waybar-headsetcontrol" || return
-    install -Dm 755 "target/release/wb-headset" "$pkgdir/usr/bin/wb-headset"
-    install -Dm 755 "install-waybar-config.sh" "$pkgdir/usr/share/wb-headsetcontrol/install-waybar-config.sh"
+    install -Dm 755 "target/release/headset-tui" "$pkgdir/usr/bin/headset-tui"
 }

@@ -32,7 +32,7 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
         .split(f.area());
 
     // Title
-    let title = Paragraph::new("Waybar Headsetcontrol TUI")
+    let title = Paragraph::new("Headset-TUI")
         .alignment(Alignment::Center)
         .style(
             Style::default()
