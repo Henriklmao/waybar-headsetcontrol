@@ -1,4 +1,6 @@
+use crate::app::UiState;
 use crate::config::KeyConfig;
+use crate::headset::{BatteryState, SIDETONE_MAX};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -6,16 +8,6 @@ use ratatui::{
     widgets::{Block, Borders, Gauge, Paragraph},
     Frame,
 };
-
-pub struct UiState {
-    pub sidetone: u8,
-    pub battery: i32,
-    pub battery_status: String,
-    pub verbose_mode: bool,
-    pub device_name: String,
-    pub has_sidetone: bool,
-    pub test_mode: bool,
-}
 
 pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
     let chunks = Layout::default()
@@ -33,10 +25,10 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
         .split(f.area());
 
     // Title
-    let title_text = if state.test_mode {
-        "Waybar Headsetcontrol TUI — simulated device"
+    let title_text = if state.mode.is_test() {
+        "Headset TUI — simulated device"
     } else {
-        "Waybar Headsetcontrol TUI"
+        "Headset TUI"
     };
     let title = Paragraph::new(title_text)
         .alignment(Alignment::Center)
@@ -48,24 +40,25 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
     f.render_widget(title, chunks[0]);
 
     // Battery status
-    let battery_color = if state.battery > 50 {
+    let battery_color = if state.battery_state == BatteryState::Charging {
+        Color::Blue
+    } else if state.battery.unwrap_or_default() > 50 {
         Color::Green
-    } else if state.battery >= 15 {
+    } else if state.battery.unwrap_or_default() >= 15 {
         Color::Yellow
     } else {
         Color::Red
     };
 
-    let battery_text = if state.battery >= 0 {
-        Line::from(vec![Span::styled(
-            format!("󰋎 Battery: {}% - {}", state.battery, state.device_name),
+    let battery_text = match state.battery {
+        Some(level) if level >= 0 => Line::from(vec![Span::styled(
+            format!("󰋎 Battery: {level}% - {}", state.device_name),
             Style::default().fg(battery_color),
-        )])
-    } else {
-        Line::from(vec![Span::styled(
+        )]),
+        _ => Line::from(vec![Span::styled(
             "󰋎 Battery: Error",
             Style::default().fg(Color::Red),
-        )])
+        )]),
     };
 
     let battery =
@@ -81,8 +74,8 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
                     .title("Sidetone Level"),
             )
             .gauge_style(Style::default().fg(Color::Cyan))
-            .percent((state.sidetone as f64 / 128.0 * 100.0) as u16)
-            .label(format!("{}/128", state.sidetone));
+            .percent((f64::from(state.sidetone) / f64::from(SIDETONE_MAX) * 100.0) as u16)
+            .label(format!("{}/{}", state.sidetone, SIDETONE_MAX));
         f.render_widget(gauge, chunks[2]);
     } else {
         let text = Paragraph::new("Sidetone: not available")

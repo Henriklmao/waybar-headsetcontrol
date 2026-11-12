@@ -1,8 +1,14 @@
+//! Configuration and file locations.
+
+use crate::cli::Mode;
+use crate::headset::SIDETONE_MAX;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::io::{self, BufRead, Write};
+use std::path::{Path, PathBuf};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+/// Keybindings.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct KeyConfig {
     pub dec1: char,
     pub dec10: char,
@@ -31,146 +37,194 @@ impl Default for KeyConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct ConfigFile {
-    keys: KeyConfig,
+/// Persisted configuration.
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
+pub struct Config {
+    pub keys: KeyConfig,
     #[serde(default)]
-    default_sidetone: u8,
+    pub default_sidetone: u8,
 }
 
-pub fn get_config_path() -> PathBuf {
-    let mut path = dirs::home_dir().unwrap_or_default();
-    path.push(".config/headset-tui/config.toml");
-    path
+/// `~/.config/headset-tui`.
+pub fn config_dir() -> PathBuf {
+    dirs::home_dir()
+        .unwrap_or_default()
+        .join(".config/headset-tui")
 }
 
-pub fn load_config() -> KeyConfig {
-    let path = get_config_path();
+/// `~/.cache`.
+pub fn cache_dir() -> PathBuf {
+    dirs::home_dir().unwrap_or_default().join(".cache")
+}
 
-    if path.exists() {
-        if let Ok(content) = fs::read_to_string(&path) {
-            if let Ok(config_file) = toml::from_str::<ConfigFile>(&content) {
-                return config_file.keys;
-            }
-        }
+/// Path builder for a config file inside `dir`.
+pub fn config_path_in(dir: &Path, mode: Mode) -> PathBuf {
+    dir.join(format!("config{}.toml", mode.suffix()))
+}
+
+/// Path builder for a sidetone state file inside `dir`.
+pub fn state_path_in(dir: &Path, mode: Mode) -> PathBuf {
+    dir.join(format!("headset-tui-sidetone-state{}", mode.suffix()))
+}
+
+/// Config file used at runtime.
+///
+/// Test mode uses `config.test.toml`, so `--config --test` never touches the
+/// real configuration.
+pub fn config_path(mode: Mode) -> PathBuf {
+    config_path_in(&config_dir(), mode)
+}
+
+/// Sidetone toggle state file used at runtime.
+pub fn state_path(mode: Mode) -> PathBuf {
+    state_path_in(&cache_dir(), mode)
+}
+
+/// Load the configuration, creating it with defaults when it does not exist.
+pub fn load(mode: Mode) -> Config {
+    load_or_create(&config_path(mode))
+}
+
+/// Load a config file, creating it with defaults when missing or unreadable.
+pub fn load_or_create(path: &Path) -> Config {
+    if let Some(config) = read(path) {
+        return config;
     }
 
-    // Auto-create config with defaults if missing
-    let config = KeyConfig::default();
-    let _ = save_config_full(&config, 0);
+    let config = Config::default();
+    let _ = save_to_path(path, &config);
     config
 }
 
-pub fn load_default_sidetone() -> u8 {
-    let path = get_config_path();
-
-    if path.exists() {
-        if let Ok(content) = fs::read_to_string(&path) {
-            if let Ok(config_file) = toml::from_str::<ConfigFile>(&content) {
-                return config_file.default_sidetone;
-            }
-        }
-    }
-
-    0
+/// Read a config file, or `None` when it is missing or invalid.
+pub fn read(path: &Path) -> Option<Config> {
+    let content = fs::read_to_string(path).ok()?;
+    toml::from_str(&content).ok()
 }
 
-fn save_config_full(keys: &KeyConfig, default_sidetone: u8) -> std::io::Result<()> {
-    let path = get_config_path();
-
+/// Write a config file, creating its directory when missing.
+pub fn save_to_path(path: &Path, config: &Config) -> io::Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
 
-    let config_file = ConfigFile {
-        keys: keys.clone(),
-        default_sidetone,
-    };
+    let content = toml::to_string_pretty(config).map_err(io::Error::other)?;
 
-    let content = toml::to_string_pretty(&config_file).unwrap_or_else(|_| String::new());
-
-    fs::write(&path, content)?;
-    Ok(())
+    fs::write(path, content)
 }
 
-pub fn interactive_config() -> std::io::Result<()> {
-    use std::io::{self, Write};
+/// Interactively edit the configuration for `mode`.
+pub fn interactive_config(
+    mode: Mode,
+    input: &mut impl BufRead,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    interactive_config_at(&config_path(mode), input, output)
+}
 
-    let mut config = load_config();
-    let mut default_sidetone = load_default_sidetone();
+/// Interactively edit the configuration stored at `path`.
+///
+/// Reads answers line by line, so the whole dialog can be exercised in tests.
+/// End of input discards the changes instead of looping forever.
+pub fn interactive_config_at(
+    path: &Path,
+    input: &mut impl BufRead,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    let mut config = read(path).unwrap_or_default();
 
-    println!("\n=== Headset Control Configuration ===\n");
+    writeln!(output, "\n=== Headset Control Configuration ===\n")?;
 
-    // Configure default sidetone
     loop {
-        print!("Default sidetone level (0-128): [{}] ", default_sidetone);
-        io::stdout().flush()?;
+        write!(
+            output,
+            "Default sidetone level (0-128): [{}] ",
+            config.default_sidetone
+        )?;
+        output.flush()?;
 
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
+        let Some(line) = read_line(input)? else {
+            writeln!(output, "\nInput closed, changes discarded")?;
+            return Ok(());
+        };
 
-        let trimmed = input.trim();
+        let trimmed = line.trim();
         if trimmed.is_empty() {
             break;
         }
-        if let Ok(level) = trimmed.parse::<u8>() {
-            if level <= 128 {
-                default_sidetone = level;
+
+        match trimmed.parse::<u8>() {
+            Ok(level) if level <= SIDETONE_MAX => {
+                config.default_sidetone = level;
                 break;
-            } else {
-                println!("Please enter a value between 0 and 128");
             }
-        } else {
-            println!("Invalid input");
+            Ok(_) => writeln!(output, "Please enter a value between 0 and 128")?,
+            Err(_) => writeln!(output, "Invalid input")?,
         }
     }
 
-    println!("\n=== Key Bindings ===\n");
+    writeln!(output, "\n=== Key Bindings ===\n")?;
 
-    let keys_to_configure = vec![
-        ("dec1", "Decrease sidetone by 1", &mut config.dec1),
-        ("dec10", "Decrease sidetone by 10", &mut config.dec10),
-        ("inc1", "Increase sidetone by 1", &mut config.inc1),
-        ("inc10", "Increase sidetone by 10", &mut config.inc10),
-        ("full", "Set sidetone to full (128)", &mut config.full),
-        ("none", "Set sidetone to none (0)", &mut config.none),
-        ("config", "Open configuration menu", &mut config.config),
-        ("verbose", "Toggle verbose mode", &mut config.verbose),
-        ("quit", "Quit the application", &mut config.quit),
+    let keys_to_configure = [
+        ("dec1", "Decrease sidetone by 1", &mut config.keys.dec1),
+        ("dec10", "Decrease sidetone by 10", &mut config.keys.dec10),
+        ("inc1", "Increase sidetone by 1", &mut config.keys.inc1),
+        ("inc10", "Increase sidetone by 10", &mut config.keys.inc10),
+        ("full", "Set sidetone to full (128)", &mut config.keys.full),
+        ("none", "Set sidetone to none (0)", &mut config.keys.none),
+        ("config", "Open configuration menu", &mut config.keys.config),
+        ("verbose", "Toggle verbose mode", &mut config.keys.verbose),
+        ("quit", "Quit the application", &mut config.keys.quit),
     ];
 
-    for (key_name, description, key_ref) in keys_to_configure {
-        print!("{} ({}): [{}] ", description, key_name, key_ref);
-        io::stdout().flush()?;
+    for (key_name, description, key) in keys_to_configure {
+        write!(output, "{description} ({key_name}): [{}] ", *key)?;
+        output.flush()?;
 
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
+        let Some(line) = read_line(input)? else {
+            writeln!(output, "\nInput closed, changes discarded")?;
+            return Ok(());
+        };
 
-        let trimmed = input.trim();
-        if !trimmed.is_empty() {
-            if let Some(c) = trimmed.chars().next() {
-                *key_ref = c.to_lowercase().next().unwrap_or(c);
-            }
+        let trimmed = line.trim();
+        if let Some(character) = trimmed.chars().next() {
+            *key = character.to_lowercase().next().unwrap_or(character);
         }
     }
 
-    // Ask to save
-    println!("\nSave changes? (w - write, esc - discard)");
+    writeln!(output, "\nSave changes? (w - write, esc - discard)")?;
+
     loop {
-        print!("> ");
-        io::stdout().flush()?;
+        write!(output, "> ")?;
+        output.flush()?;
 
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
-        let trimmed = input.trim();
+        let Some(line) = read_line(input)? else {
+            writeln!(output, "Changes discarded")?;
+            return Ok(());
+        };
 
-        if trimmed.to_lowercase() == "w" {
-            save_config_full(&config, default_sidetone)?;
-            println!("Configuration saved to {:?}", get_config_path());
-            return Ok(());
-        } else if trimmed.is_empty() || trimmed.to_lowercase() == "esc" {
-            println!("Changes discarded");
-            return Ok(());
+        match line.trim().to_lowercase().as_str() {
+            "w" => {
+                save_to_path(path, &config)?;
+                writeln!(output, "Configuration saved to {}", path.display())?;
+                return Ok(());
+            }
+            "" | "esc" => {
+                writeln!(output, "Changes discarded")?;
+                return Ok(());
+            }
+            _ => {}
         }
+    }
+}
+
+/// Read one line; `None` signals end of input.
+fn read_line(input: &mut impl BufRead) -> io::Result<Option<String>> {
+    let mut line = String::new();
+
+    if input.read_line(&mut line)? == 0 {
+        Ok(None)
+    } else {
+        Ok(Some(line))
     }
 }
