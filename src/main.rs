@@ -38,21 +38,50 @@ struct Battery {
     level: i32,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = std::env::args().collect();
+/// Flag passed to `headsetcontrol` to make it use its built-in mock device.
+const TEST_DEVICE_FLAG: &str = "--test-device";
 
-    if args.len() > 1 && args[1] == "--config" {
+/// Arguments `wb-headset` accepts. Anything else is rejected instead of silently
+/// falling through to the TUI.
+const KNOWN_FLAGS: [&str; 6] = [
+    "--test",
+    "--help",
+    "-h",
+    "--config",
+    "--toggle-sidetone",
+    "--waybar-status",
+];
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let has_flag = |flag: &str| args.iter().any(|arg| arg == flag);
+
+    if let Some(unknown) = args.iter().find(|arg| !KNOWN_FLAGS.contains(&arg.as_str())) {
+        eprintln!("wb-headset: unknown argument '{}'", unknown);
+        eprintln!("Run 'wb-headset --help' for usage.");
+        std::process::exit(2);
+    }
+
+    // `--test` makes every `headsetcontrol` call use its simulated device.
+    let test_mode = has_flag("--test");
+
+    if has_flag("--help") || has_flag("-h") {
+        print_help();
+        return Ok(());
+    }
+
+    if has_flag("--config") {
         config::interactive_config()?;
         return Ok(());
     }
 
-    if args.len() > 1 && args[1] == "--toggle-sidetone" {
-        toggle_sidetone()?;
+    if has_flag("--toggle-sidetone") {
+        toggle_sidetone(test_mode)?;
         return Ok(());
     }
 
-    if args.len() > 1 && args[1] == "--waybar-status" {
-        return waybar_status();
+    if has_flag("--waybar-status") {
+        return waybar_status(test_mode);
     }
 
     // Setup terminal
@@ -71,16 +100,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         verbose_mode: false,
         device_name: String::new(),
         has_sidetone: true,
+        test_mode,
     };
 
     // Apply default sidetone to headset if it's not 0
     if default_sidetone > 0 {
-        set_sidetone(default_sidetone);
+        set_sidetone(default_sidetone, test_mode);
     }
 
-    update_battery(&mut state);
+    update_battery(&mut state, test_mode);
 
-    let result = run_app(&mut terminal, &mut keys, &mut state);
+    let result = run_app(&mut terminal, &mut keys, &mut state, test_mode);
 
     // Restore terminal
     disable_raw_mode()?;
@@ -94,6 +124,7 @@ fn run_app(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     keys: &mut KeyConfig,
     state: &mut UiState,
+    test_mode: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     loop {
         terminal.draw(|f| {
@@ -104,30 +135,30 @@ fn run_app(
             Action::DecBy1 => {
                 if state.sidetone > 0 {
                     state.sidetone -= 1;
-                    set_sidetone(state.sidetone);
+                    set_sidetone(state.sidetone, test_mode);
                 }
             }
             Action::DecBy10 => {
                 state.sidetone = state.sidetone.saturating_sub(10);
-                set_sidetone(state.sidetone);
+                set_sidetone(state.sidetone, test_mode);
             }
             Action::IncBy1 => {
                 if state.sidetone < 128 {
                     state.sidetone += 1;
-                    set_sidetone(state.sidetone);
+                    set_sidetone(state.sidetone, test_mode);
                 }
             }
             Action::IncBy10 => {
                 state.sidetone = (state.sidetone + 10).min(128);
-                set_sidetone(state.sidetone);
+                set_sidetone(state.sidetone, test_mode);
             }
             Action::SetFull => {
                 state.sidetone = 128;
-                set_sidetone(128);
+                set_sidetone(128, test_mode);
             }
             Action::SetNone => {
                 state.sidetone = 0;
-                set_sidetone(0);
+                set_sidetone(0, test_mode);
             }
             Action::ToggleVerbose => {
                 state.verbose_mode = !state.verbose_mode;
@@ -145,11 +176,11 @@ fn run_app(
                 terminal.clear()?;
 
                 *keys = config::load_config();
-                update_battery(state);
+                update_battery(state, test_mode);
             }
             Action::Quit => break,
             Action::None => {
-                update_battery(state);
+                update_battery(state, test_mode);
             }
         }
     }
@@ -157,16 +188,22 @@ fn run_app(
     Ok(())
 }
 
-fn toggle_sidetone() -> Result<(), Box<dyn std::error::Error>> {
+fn toggle_sidetone(test_mode: bool) -> Result<(), Box<dyn std::error::Error>> {
     let default_sidetone = config::load_default_sidetone();
 
     if default_sidetone == 0 {
         return Ok(());
     }
 
-    // Use a simple state file to track if sidetone is currently on
+    // Use a simple state file to track if sidetone is currently on.
+    // In test mode a separate file is used so the real headset state stays untouched.
+    let file_name = if test_mode {
+        ".cache/wb-headsetcontrol-sidetone-state.test"
+    } else {
+        ".cache/wb-headsetcontrol-sidetone-state"
+    };
     let state_file = dirs::home_dir()
-        .map(|p| p.join(".cache/wb-headsetcontrol-sidetone-state"))
+        .map(|p| p.join(file_name))
         .unwrap_or_default();
 
     let is_on = std::fs::read_to_string(&state_file)
@@ -175,19 +212,44 @@ fn toggle_sidetone() -> Result<(), Box<dyn std::error::Error>> {
 
     if is_on {
         // Turn off
-        set_sidetone(0);
-        let _ = std::fs::write(&state_file, "off");
+        set_sidetone(0, test_mode);
+        save_toggle_state(&state_file, "off");
     } else {
         // Turn on
-        set_sidetone(default_sidetone);
-        let _ = std::fs::write(&state_file, "on");
+        set_sidetone(default_sidetone, test_mode);
+        save_toggle_state(&state_file, "on");
     }
 
     Ok(())
 }
 
-fn set_sidetone(value: u8) {
-    let _ = Command::new("headsetcontrol")
+/// Persist the toggle state, creating its directory when missing.
+fn save_toggle_state(path: &std::path::Path, value: &str) {
+    if let Some(parent) = path.parent() {
+        if let Err(err) = std::fs::create_dir_all(parent) {
+            eprintln!("wb-headset: could not create {}: {}", parent.display(), err);
+            return;
+        }
+    }
+
+    if let Err(err) = std::fs::write(path, value) {
+        eprintln!("wb-headset: could not write {}: {}", path.display(), err);
+    }
+}
+
+/// Build a `headsetcontrol` command, optionally targeting the simulated device.
+fn headsetcontrol(test_mode: bool) -> Command {
+    let mut cmd = Command::new("headsetcontrol");
+
+    if test_mode {
+        cmd.arg(TEST_DEVICE_FLAG);
+    }
+
+    cmd
+}
+
+fn set_sidetone(value: u8, test_mode: bool) {
+    let _ = headsetcontrol(test_mode)
         .arg("-s")
         .arg(value.to_string())
         .stdout(Stdio::null())
@@ -195,12 +257,8 @@ fn set_sidetone(value: u8) {
         .spawn();
 }
 
-fn update_battery(state: &mut UiState) {
-    if let Ok(output) = Command::new("headsetcontrol")
-        .arg("-o")
-        .arg("json")
-        .output()
-    {
+fn update_battery(state: &mut UiState, test_mode: bool) {
+    if let Ok(output) = headsetcontrol(test_mode).arg("-o").arg("json").output() {
         let stdout = String::from_utf8_lossy(&output.stdout);
 
         if let Ok(hc_output) = serde_json::from_str::<HeadsetControlOutput>(&stdout) {
@@ -236,12 +294,8 @@ fn update_battery(state: &mut UiState) {
     state.has_sidetone = false;
 }
 
-fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
-    if let Ok(output) = Command::new("headsetcontrol")
-        .arg("-o")
-        .arg("json")
-        .output()
-    {
+fn waybar_status(test_mode: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if let Ok(output) = headsetcontrol(test_mode).arg("-o").arg("json").output() {
         let stdout = String::from_utf8_lossy(&output.stdout);
 
         if let Ok(hc_output) = serde_json::from_str::<HeadsetControlOutput>(&stdout) {
@@ -286,14 +340,45 @@ fn waybar_status() -> Result<(), Box<dyn std::error::Error>> {
                     "{{\"text\": \"{}\", \"class\": \"{}\", \"tooltip\": \"{}\"}}",
                     text, class, tooltip
                 );
-            } else {
-                println!("{{\"text\": \"<span foreground=\\\"#ff0000\\\" font_weight=\\\"bold\\\">󰋎</span>\", \"class\": \"headset-error\", \"tooltip\": \"Headset not found\"}}");
+                return Ok(());
             }
-        } else {
-            println!("{{\"text\": \"<span foreground=\\\"#ff0000\\\" font_weight=\\\"bold\\\">󰋎</span>\", \"class\": \"headset-error\", \"tooltip\": \"Headset not found\"}}");
         }
-    } else {
-        println!("{{\"text\": \"<span foreground=\\\"#ff0000\\\" font_weight=\\\"bold\\\">󰋎</span>\", \"class\": \"headset-error\", \"tooltip\": \"Headset not found\"}}");
     }
+
+    println!("{}", waybar_error(test_mode));
     Ok(())
+}
+
+/// Waybar JSON shown when no headset (or, in test mode, no mock device) is available.
+fn waybar_error(test_mode: bool) -> &'static str {
+    if test_mode {
+        r##"{"text": "<span foreground=\"#ff0000\" font_weight=\"bold\">󰋎</span>", "class": "headset-error", "tooltip": "Test device not available"}"##
+    } else {
+        r##"{"text": "<span foreground=\"#ff0000\" font_weight=\"bold\">󰋎</span>", "class": "headset-error", "tooltip": "Headset not found"}"##
+    }
+}
+
+fn print_help() {
+    println!(
+        "\
+wb-headset - HeadsetControl integration for Waybar
+
+USAGE:
+    wb-headset [OPTIONS]
+
+OPTIONS:
+    (none)              Launch the interactive TUI
+    --waybar-status     Print the Waybar JSON for the battery module
+    --toggle-sidetone   Toggle sidetone between off and the default level
+    --config            Edit keybindings and default sidetone
+    --test              Use HeadsetControl's simulated device instead of a real
+                        headset. Only affects commands that talk to a headset,
+                        so it combines with any option above, e.g.
+                        `wb-headset --test` or `wb-headset --waybar-status --test`
+    -h, --help          Show this help
+
+NOTE:
+    --test requires HeadsetControl with the --test-device option (mock device).
+    No headset needs to be connected."
+    );
 }

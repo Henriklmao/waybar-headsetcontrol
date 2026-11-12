@@ -11,6 +11,7 @@ A simple Rust and [ratatui](https://ratatui.rs/) based integration of HeadsetCon
 - **Battery Display** - Shows battery percentage with color-coded icons (green >50%, yellow 15-50%, red <15%)
 - **Sidetone Control** - Interactive TUI to adjust sidetone levels (0-128)
 - **Configurable Keys** - Customize all keybindings and default sidetone via interactive config or terminal
+- **Test Mode** - `--test` runs the whole tool against HeadsetControl's simulated device, no headset required
 - Automatically hidden from your waybar when no headphones are connected. Tui can still be launched from your terminal.
 
 ## Limitations
@@ -111,3 +112,35 @@ Get battery status for Waybar:
 ```bash
 wb-headset --waybar-status
 ```
+
+Show all options:
+
+```bash
+wb-headset --help
+```
+
+## Testing without a headset
+
+`--test` makes every call to `headsetcontrol` use its simulated device
+(`headsetcontrol --test-device`). It is a modifier, so it can be combined with
+any other option and in any order:
+
+```bash
+wb-headset --test                    # TUI with the simulated device
+wb-headset --test --waybar-status    # Waybar JSON from the simulated device
+wb-headset --toggle-sidetone --test  # Toggle sidetone on the simulated device
+```
+
+The simulated device reports a battery level of 42% and advertises sidetone
+support, so colors, tooltips, icons and the sidetone gauge can be verified
+without hardware.
+
+Notes:
+
+- `--test` requires a HeadsetControl build that ships `--test-device`
+  (`headsetcontrol --help-all` lists it under `ADVANCED`).
+- Toggle state is kept in a separate file
+  (`~/.cache/wb-headsetcontrol-sidetone-state.test`), so testing never changes
+  the state of a real headset.
+- The mock device is created per invocation and does not keep modifications
+  between two calls, so the TUI always starts from its defaults.

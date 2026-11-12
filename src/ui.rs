@@ -14,6 +14,7 @@ pub struct UiState {
     pub verbose_mode: bool,
     pub device_name: String,
     pub has_sidetone: bool,
+    pub test_mode: bool,
 }
 
 pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
@@ -32,7 +33,12 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
         .split(f.area());
 
     // Title
-    let title = Paragraph::new("Waybar Headsetcontrol TUI")
+    let title_text = if state.test_mode {
+        "Waybar Headsetcontrol TUI — simulated device"
+    } else {
+        "Waybar Headsetcontrol TUI"
+    };
+    let title = Paragraph::new(title_text)
         .alignment(Alignment::Center)
         .style(
             Style::default()
