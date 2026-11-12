@@ -123,26 +123,63 @@ headset-tui --help
 
 ## Testing without a headset
 
-`--test` makes every call to `headsetcontrol` use its simulated device
-(`headsetcontrol --test-device`). It is a modifier, so it can be combined with
-any other option and in any order:
+`--test` runs the whole tool simulated, so any feature can be tried without
+hardware and without touching your real setup. It works with every command and
+in any position:
 
 ```bash
 headset-tui --test                    # TUI with the simulated device
 headset-tui --test --waybar-status    # Waybar JSON from the simulated device
 headset-tui --toggle-sidetone --test  # Toggle sidetone on the simulated device
+headset-tui --config --test           # Edit the test configuration
 ```
 
-The simulated device reports a battery level of 42% and advertises sidetone
-support, so colors, tooltips, icons and the sidetone gauge can be verified
-without hardware.
+What `--test` changes:
+
+| | Normal | `--test` |
+|---|---|---|
+| Headset | real device | HeadsetControl mock (`--test-device`) |
+| Config | `~/.config/headset-tui/config.toml` | `~/.config/headset-tui/config.test.toml` |
+| Sidetone toggle state | `~/.cache/headset-tui-sidetone-state` | `~/.cache/headset-tui-sidetone-state.test` |
+
+The mock device reports a battery level of 42%, advertises sidetone support and
+does not keep modifications between invocations, so the TUI starts from the
+configured default every time.
 
 Notes:
 
 - `--test` requires a HeadsetControl build that ships `--test-device`
   (`headsetcontrol --help-all` lists it under `ADVANCED`).
-- Toggle state is kept in a separate file
-  (`~/.cache/headset-tui-sidetone-state.test`), so testing never changes
-  the state of a real headset.
-- The mock device is created per invocation and does not keep modifications
-  between two calls, so the TUI always starts from its defaults.
+- The interactive config dialog (`--config --test` and the `c` key inside the
+  TUI) edits the test config, so experiments never leak into your real
+  keybindings or default sidetone.
+- Unknown arguments and conflicting commands are rejected with exit code 2
+  instead of silently starting the TUI, which keeps typos in a Waybar `exec`
+  visible.
+
+## Development
+
+The code is split into small modules so everything can be exercised without a
+headset:
+
+| Module | Responsibility |
+|---|---|
+| `src/cli.rs` | argument parsing, `Mode` (normal/test), help text |
+| `src/headset.rs` | HeadsetControl protocol, `Headset` trait and the real backend |
+| `src/waybar.rs` | Waybar JSON output |
+| `src/app.rs` | UI state, key actions, sidetone toggle persistence |
+| `src/config.rs` | config/state paths, reading/writing TOML, config dialog |
+| `src/input.rs` | key events to actions |
+| `src/ui.rs` | ratatui rendering |
+| `src/main.rs` | wiring and the terminal event loop |
+
+Run the test suite and lints:
+
+```bash
+cargo test
+cargo clippy --all-targets -- -D warnings
+cargo fmt --check
+```
+
+Device access sits behind the `Headset` trait, so tests use
+`headset::mock::MockHeadset` instead of invoking `headsetcontrol`.
