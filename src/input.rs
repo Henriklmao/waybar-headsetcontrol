@@ -37,24 +37,26 @@ pub fn key_to_action(key: KeyEvent, keys: &KeyConfig) -> Action {
     };
 
     let character = character.to_lowercase().next().unwrap_or(character);
+    let binding_matches =
+        |binding: char| character == binding.to_lowercase().next().unwrap_or(binding);
 
-    if character == keys.dec1 {
+    if binding_matches(keys.dec1) {
         Action::DecBy1
-    } else if character == keys.dec10 {
+    } else if binding_matches(keys.dec10) {
         Action::DecBy10
-    } else if character == keys.inc1 {
+    } else if binding_matches(keys.inc1) {
         Action::IncBy1
-    } else if character == keys.inc10 {
+    } else if binding_matches(keys.inc10) {
         Action::IncBy10
-    } else if character == keys.full {
+    } else if binding_matches(keys.full) {
         Action::SetFull
-    } else if character == keys.none {
+    } else if binding_matches(keys.none) {
         Action::SetNone
-    } else if character == keys.quit {
+    } else if binding_matches(keys.quit) {
         Action::Quit
-    } else if character == keys.verbose {
+    } else if binding_matches(keys.verbose) {
         Action::ToggleVerbose
-    } else if character == keys.config {
+    } else if binding_matches(keys.config) {
         Action::Config
     } else {
         Action::None
@@ -251,6 +253,22 @@ mod tests {
         assert_eq!(key_to_action(press('Ä'), &keys), Action::DecBy1);
         assert_eq!(key_to_action(press('ö'), &keys), Action::IncBy1);
         assert_eq!(key_to_action(press('a'), &keys), Action::None);
+    }
+
+    #[test]
+    fn uppercase_bindings_from_a_hand_edited_config_still_match() {
+        // The interactive config lowercases input, but a config edited by hand
+        // may contain uppercase characters.
+        let keys = KeyConfig {
+            dec1: 'A',
+            quit: 'X',
+            ..KeyConfig::default()
+        };
+
+        assert_eq!(key_to_action(press('a'), &keys), Action::DecBy1);
+        assert_eq!(key_to_action(press('A'), &keys), Action::DecBy1);
+        assert_eq!(key_to_action(press('x'), &keys), Action::Quit);
+        assert_eq!(key_to_action(press('X'), &keys), Action::Quit);
     }
 
     #[test]

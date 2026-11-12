@@ -85,13 +85,14 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
 
     // Help text
     let help_text = format!(
-        "[{}] Dec-1  [{}] Dec-10  [{}] Inc-1  [{}] Inc-10  [{}] Full  [{}] None  [{}] Config  [{}] Quit",
+        "[{}] Dec-1  [{}] Dec-10  [{}] Inc-1  [{}] Inc-10  [{}] Full  [{}] None  [{}] Verbose  [{}] Config  [{}] Quit",
         keys.dec1.to_uppercase(),
         keys.dec10.to_uppercase(),
         keys.inc1.to_uppercase(),
         keys.inc10.to_uppercase(),
         keys.full.to_uppercase(),
         keys.none.to_uppercase(),
+        keys.verbose.to_uppercase(),
         keys.config.to_uppercase(),
         keys.quit.to_uppercase(),
     );
@@ -353,6 +354,7 @@ mod tests {
             "[W] Inc-10",
             "[F] Full",
             "[E] None",
+            "[V] Verbose",
             "[C] Config",
             "[Q] Quit",
         ] {
@@ -375,6 +377,7 @@ mod tests {
             "[I] Inc-10",
             "[O] Full",
             "[U] None",
+            "[H] Verbose",
             "[Y] Config",
             "[X] Quit",
         ] {
