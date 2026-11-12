@@ -48,14 +48,12 @@ pub fn status_output(status: &HeadsetStatus) -> WaybarOutput {
         BatteryState::Unavailable => unreachable!("handled above"),
     };
 
-    let tooltip = if status.battery_state == BatteryState::Charging {
-        "󰂄 Charging".to_string()
-    } else if status.battery_level >= 50 {
-        format!("󱊣 {}%", status.battery_level)
-    } else if status.battery_level >= 15 {
-        format!("󱊢 {}%", status.battery_level)
-    } else {
-        format!("󱊡 {}%", status.battery_level)
+    let tooltip = match status.battery_state {
+        BatteryState::Charging => "󰂄 Charging".to_string(),
+        BatteryState::Good => format!("󱊣 {}%", status.battery_level),
+        BatteryState::Medium => format!("󱊢 {}%", status.battery_level),
+        BatteryState::Low => format!("󱊡 {}%", status.battery_level),
+        BatteryState::Unavailable => unreachable!("handled above"),
     };
 
     WaybarOutput {
@@ -141,13 +139,13 @@ mod tests {
     // --- medium ------------------------------------------------------------
 
     #[test]
-    fn medium_output_at_boundary_50_keeps_the_full_battery_tooltip() {
+    fn medium_output_at_boundary_50_uses_the_half_battery_glyph() {
         let output = status_output(&status(BatteryState::Medium, 50));
 
         assert_eq!(output.text, icon_span("#ffff00"));
         assert_eq!(output.class, "headset-medium");
-        // The class uses `> 50` but the tooltip uses `>= 50`.
-        assert_eq!(output.tooltip.as_deref(), Some("󱊣 50%"));
+        // Class and tooltip now use the same threshold, so the glyph matches.
+        assert_eq!(output.tooltip.as_deref(), Some("󱊢 50%"));
     }
 
     #[test]
