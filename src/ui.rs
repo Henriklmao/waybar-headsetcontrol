@@ -85,7 +85,7 @@ pub fn draw(f: &mut Frame, state: &UiState, keys: &KeyConfig) {
 
     // Help text
     let help_text = format!(
-        "[{}] Dec-1  [{}] Dec-10  [{}] Inc-1  [{}] Inc-10  [{}] Full  [{}] None  [{}] Verbose  [{}] Config  [{}] Quit",
+        "[{}] Dec-1 [{}] Dec-10 [{}] Inc-1 [{}] Inc-10 [{}] Full [{}] None [{}] Verbose [{}] Config [{}] Quit",
         keys.dec1.to_uppercase(),
         keys.dec10.to_uppercase(),
         keys.inc1.to_uppercase(),
