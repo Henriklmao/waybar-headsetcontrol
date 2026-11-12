@@ -84,6 +84,14 @@ impl Headset for HeadsetControl {
             .output()
             .map_err(|err| HeadsetError::Unavailable(err.to_string()))?;
 
+        // headsetcontrol exits non-zero on real errors (e.g. an older build
+        // without `--test-device`); don't report those as a parse failure.
+        if !output.status.success() {
+            return Err(HeadsetError::CommandFailed(
+                output.status.code().unwrap_or(-1),
+            ));
+        }
+
         parse_status(&output.stdout)
     }
 
