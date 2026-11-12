@@ -90,14 +90,13 @@ pub fn load(mode: Mode) -> Config {
 /// An existing but unreadable config is left untouched and defaults are used
 /// for this run, so a typo never destroys the user's bindings.
 pub fn load_or_create(path: &Path) -> Config {
-    match fs::read_to_string(path) {
-        Ok(content) => toml::from_str(&content).unwrap_or_default(),
-        Err(_) => {
-            let config = Config::default();
-            let _ = save_to_path(path, &config);
-            config
-        }
+    if path.exists() {
+        return read(path).unwrap_or_default();
     }
+
+    let config = Config::default();
+    let _ = save_to_path(path, &config);
+    config
 }
 
 /// Read a config file, or `None` when it is missing or invalid.
@@ -597,6 +596,19 @@ quit = \"r\"
         assert_eq!(loaded, Config::default());
         assert_eq!(fs::read_to_string(&path).unwrap(), broken);
         assert_eq!(read(&path), None);
+    }
+
+    #[test]
+    fn load_or_create_keeps_a_config_that_is_not_utf8() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("config.toml");
+        let broken = [0xff_u8, 0xfe, 0x00, 0x01];
+        fs::write(&path, broken).unwrap();
+
+        let loaded = load_or_create(&path);
+
+        assert_eq!(loaded, Config::default());
+        assert_eq!(fs::read(&path).unwrap(), broken);
     }
 
     // -------------------------------------------------------------- dialogs
