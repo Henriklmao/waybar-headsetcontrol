@@ -2,8 +2,8 @@
 set -e
 
 # Configuration
-INSTALL_DIR="${HOME}/.local/bin/wb-headsetcontrol"
-BIN_NAME="wb-headset"
+INSTALL_DIR="${HOME}/.local/bin/headset-tui"
+BIN_NAME="headset-tui"
 WAYBAR_CONFIG="${HOME}/.config/waybar/config.jsonc"
 
 # Detect preferred terminal (alacritty preferred, then kitty)
@@ -33,7 +33,7 @@ chmod +x "$INSTALL_DIR/$BIN_NAME"
 echo "[3/4] Adding to PATH..."
 for rc_file in ~/.bashrc ~/.zshrc ~/.profile; do
     if [ -f "$rc_file" ]; then
-        if ! grep -q "wb-headsetcontrol" "$rc_file"; then
+        if ! grep -q "headset-tui" "$rc_file"; then
             echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$rc_file"
             echo "  ✓ Updated $rc_file"
         fi
@@ -46,7 +46,7 @@ if [ -f "$WAYBAR_CONFIG" ]; then
     if grep -q "\"custom/headsetcontrol\"" "$WAYBAR_CONFIG"; then
         # Config entry exists, update it with proper escaping
         sed -i "s|\"exec\": \"[^\"]*--waybar-status[^\"]*\"|\"exec\": \"${INSTALL_DIR}/${BIN_NAME} --waybar-status\"|g" "$WAYBAR_CONFIG"
-        sed -i "s|\"on-click\": \"[^\"]*wb-headset[^\"]*\"|\"on-click\": \"${ON_CLICK}\"|g" "$WAYBAR_CONFIG"
+        sed -i "s|\"on-click\": \"[^\"]*headset-tui[^\"]*\"|\"on-click\": \"${ON_CLICK}\"|g" "$WAYBAR_CONFIG"
         echo "  ✓ Updated Waybar config"
     else
         echo "  ⚠ custom/headsetcontrol not found in Waybar config - manual setup required"

@@ -1,0 +1,41 @@
+name: aur-publish-git
+
+on:
+  schedule:
+    # Daily at 03:17 UTC; GitHub Actions cron is always UTC.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Serialise runs; never cancel a publish half-way.
+concurrency:
+  group: aur-publish-git-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  aur-publish-git:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # pkgver() counts commits, so the generator needs the full history.
+          fetch-depth: 0
+
+      - name: Generate PKGBUILD for git package
+        run: bash ./generate-pkgbuild-git.bash
+
+      - name: Publish AUR package (git)
+        uses: KSXGitHub/github-actions-deploy-aur@084b0d9b15415bf9cdb65d44dad1efe37a354050 # v4.2.0
+        with:
+          pkgname: headset-tui-git
+          pkgbuild: ./PKGBUILD
+          assets: |
+            headset-tui.install
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update AUR package headset-tui-git to ${{ github.sha }}
+          ssh_keyscan_types: rsa,ecdsa,ed25519

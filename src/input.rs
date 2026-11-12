@@ -1,6 +1,6 @@
+use crate::config::KeyConfig;
 use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use std::time::Duration;
-use crate::config::KeyConfig;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
@@ -28,7 +28,7 @@ pub fn handle_input(keys: &KeyConfig) -> Action {
 fn key_to_action(key: KeyEvent, keys: &KeyConfig) -> Action {
     if let KeyCode::Char(c) = key.code {
         let lower = c.to_lowercase().next().unwrap_or(c);
-        
+
         if lower == keys.dec1 {
             Action::DecBy1
         } else if lower == keys.dec10 {

@@ -40,7 +40,7 @@ struct ConfigFile {
 
 pub fn get_config_path() -> PathBuf {
     let mut path = dirs::home_dir().unwrap_or_default();
-    path.push(".config/wb-headsetcontrol/config.toml");
+    path.push(".config/headset-tui/config.toml");
     path
 }
 

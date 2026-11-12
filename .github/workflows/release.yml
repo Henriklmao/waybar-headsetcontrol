@@ -1,0 +1,68 @@
+name: Release AppImage
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+# Serialise releases for the same tag; never cancel mid-publish.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust & MUSL Target
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          targets: x86_64-unknown-linux-musl
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y file wget libfuse2 musl-tools
+
+      - name: Install appimagetool
+        run: |
+          sudo wget -q https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage -O /usr/local/bin/appimagetool
+          echo "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  /usr/local/bin/appimagetool" | sha256sum -c -
+          sudo chmod +x /usr/local/bin/appimagetool
+
+      - name: Install cargo-appimage
+        run: cargo install cargo-appimage --version 2.4.0
+
+      - name: Build Rust Project (MUSL)
+        run: cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Prepare Binary for AppImage
+        run: |
+          mkdir -p target/release
+          cp target/x86_64-unknown-linux-musl/release/headset-tui target/release/
+
+      - name: Build AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+        run: cargo appimage
+
+      - name: Rename AppImage with Tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cd target/appimage
+          mv headset-tui.AppImage "headset-tui-${RELEASE_TAG}.AppImage"
+
+      - name: Create Release and Upload AppImage
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: "target/appimage/headset-tui-*.AppImage"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

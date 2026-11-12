@@ -1,0 +1,59 @@
+name: aur-publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+# Serialise tag runs; never cancel a publish half-way.
+concurrency:
+  group: aur-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  aur-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Generate PKGBUILD
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash ./generate-pkgbuild.bash "$RELEASE_TAG"
+
+      - name: Publish AUR package
+        uses: KSXGitHub/github-actions-deploy-aur@084b0d9b15415bf9cdb65d44dad1efe37a354050 # v4.2.0
+        with:
+          pkgname: headset-tui
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update AUR package to ${{ github.ref_name }}
+          ssh_keyscan_types: rsa,ecdsa,ed25519
+
+  aur-publish-bin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Generate PKGBUILD for pre-built binary
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash ./generate-pkgbuild-bin.bash "$RELEASE_TAG"
+
+      - name: Publish AUR package (bin)
+        uses: KSXGitHub/github-actions-deploy-aur@084b0d9b15415bf9cdb65d44dad1efe37a354050 # v4.2.0
+        with:
+          pkgname: headset-tui-bin
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update AUR package to ${{ github.ref_name }}
+          ssh_keyscan_types: rsa,ecdsa,ed25519

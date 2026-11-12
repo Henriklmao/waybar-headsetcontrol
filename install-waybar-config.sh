@@ -1,9 +1,9 @@
 #!/bin/bash
-# Auto-configure Waybar for wb-headsetcontrol
+# Auto-configure Waybar for headset-tui
 
 WAYBAR_CONFIG="${HOME}/.config/waybar/config.jsonc"
 MODULE_NAME="custom/headsetcontrol"
-BINARY_PATH="/usr/bin/wb-headset"
+BINARY_PATH="/usr/bin/headset-tui"
 
 # Detect available terminal (alacritty preferred, then kitty)
 if command -v alacritty &> /dev/null; then
@@ -23,11 +23,11 @@ fi
 
 # Check if module already added to modules-right
 if grep -q "\"$MODULE_NAME\"" "$WAYBAR_CONFIG"; then
-    echo "wb-headsetcontrol already configured in Waybar"
+    echo "headset-tui already configured in Waybar"
     exit 0
 fi
 
-echo "Adding wb-headsetcontrol to Waybar (using $TERMINAL_CMD)..."
+echo "Adding headset-tui to Waybar (using $TERMINAL_CMD)..."
 
 # Add module to modules-right array (after first module for safety)
 sed -i '/modules-right.*\[/,/\]/s/"cpu"/"'$MODULE_NAME'", "cpu"/' "$WAYBAR_CONFIG"

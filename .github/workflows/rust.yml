@@ -1,0 +1,101 @@
+name: Rust
+
+on:
+  push:
+  pull_request:
+
+# One run per ref at a time. A newer push/PR queues behind the running check
+# instead of cancelling it, so every started run finishes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+# Read-only by default; only the release job widens it.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - uses: actions/checkout@v5
+
+    # The toolchain is pinned so a new stable clippy cannot break a commit that
+    # was green before (clippy 1.99 added needless_borrows_for_generic_args).
+    # Bump deliberately; the action itself is pinned to a commit SHA.
+    - name: Install Rust Toolchain
+      uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+      with:
+        toolchain: "1.99.1"
+        components: clippy, rustfmt
+
+    - name: Cache cargo
+      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+    - name: Format check
+      run: cargo fmt --check
+
+    - name: Clippy
+      run: cargo clippy --all-targets -- -D warnings
+
+    - name: Run tests
+      run: cargo test --verbose
+
+    - name: Build release binary
+      run: cargo build --release --verbose
+
+    - name: Set build name
+      id: build
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          name="$GITHUB_REF_NAME"
+        else
+          name="${GITHUB_SHA::7}"
+        fi
+        echo "name=$name" >> "$GITHUB_OUTPUT"
+
+    - name: Package release binary
+      env:
+        BUILD_NAME: ${{ steps.build.outputs.name }}
+      run: |
+        mkdir -p dist
+        cp target/release/headset-tui "dist/headset-tui-${BUILD_NAME}-x86_64-linux-gnu"
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: headset-tui-${{ steps.build.outputs.name }}-x86_64-linux-gnu
+        path: dist/headset-tui-*-x86_64-linux-gnu
+        if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download the built binary
+      uses: actions/download-artifact@v8
+      with:
+        pattern: headset-tui-*
+        merge-multiple: true
+        path: dist
+
+    - name: Upload binary to GitHub Release
+      uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+      with:
+        files: "dist/headset-tui-*-x86_64-linux-gnu"
+        # download-artifact@v8 has no if-no-artifact-found input and the release
+        # action ignores unmatched globs by default, so a re-run without
+        # artifacts would publish a binary-less release and still pass.
+        fail_on_unmatched_files: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,6 @@
-# [HeadsetControl](https://github.com/Sapd/HeadsetControl) integration for [Waybar](https://github.com/Alexays/Waybar)
+# headset-tui
+
+[HeadsetControl](https://github.com/Sapd/HeadsetControl) integration for [Waybar](https://github.com/Alexays/Waybar).
 
 A simple Rust and [ratatui](https://ratatui.rs/) based integration of HeadsetControl features into Waybar. Shows wireless headphone battery status with colored icons and provides an interactive TUI for sidetone control.
 
@@ -22,12 +24,12 @@ A simple Rust and [ratatui](https://ratatui.rs/) based integration of HeadsetCon
 
 Make sure that you have a [Nerdfont](https://www.nerdfonts.com/) installed and configured in Waybar to see the icons.
 
-### [AUR](https://aur.archlinux.org/packages/wb-headsetcontrol-git)
+### [AUR](https://aur.archlinux.org/packages/headset-tui-git)
 
 ```bash
-yay -S wb-headsetcontrol-git
+yay -S headset-tui-git
 # or
-paru -S wb-headsetcontrol-git
+paru -S headset-tui-git
 ```
 
 After installation, the post_install hook will display instructions for Waybar configuration.
@@ -37,8 +39,8 @@ After installation, the post_install hook will display instructions for Waybar c
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/Henriklmao/waybar-headsetcontrol.git
-cd waybar-headsetcontrol
+git clone https://github.com/Henriklmao/headset-tui.git
+cd headset-tui
 ```
 
 2. Build with Cargo:
@@ -50,7 +52,7 @@ cargo build --release
 3. Install the binary:
 
 ```bash
-sudo install -Dm 755 target/release/wb-headset /usr/bin/wb-headset
+sudo install -Dm 755 target/release/headset-tui /usr/bin/headset-tui
 ```
 
 ## Configuration
@@ -66,24 +68,24 @@ You can modify the position in your waybar manually here `~/.config/waybar/confi
   "modules-right": ["custom/headsetcontrol"], # You can use modules-left or modules-center instead if you prefer.
 
   "custom/headsetcontrol": {
-      "exec": "/home/$USER/.local/bin/wb-headsetcontrol/wb-headset --waybar-status", #
+      "exec": "/home/$USER/.local/bin/headset-tui/headset-tui --waybar-status", #
       "return-type": "json",
       "interval": 10,
       "format": "{text}",
       "tooltip": true,
-      "on-click": "kitty /home/$USER/.local/bin/wb-headsetcontrol/wb-headset", # You can set any terminal of your choice, however only kitty and alacritty are tested.
-      "on-right-click": "bash -c '/home/$USER/.local/bin/wb-headsetcontrol/wb-headset --toggle-sidetone &'"
+      "on-click": "kitty /home/$USER/.local/bin/headset-tui/headset-tui", # You can set any terminal of your choice, however only kitty and alacritty are tested.
+      "on-right-click": "bash -c '/home/$USER/.local/bin/headset-tui/headset-tui --toggle-sidetone &'"
     },
 }
 ```
 
 ### Keybindings & Settings
 
-Configuration is automatically created at `~/.config/wb-headsetcontrol/config.toml`.
+Configuration is automatically created at `~/.config/headset-tui/config.toml`.
 
 To configure interactively, either:
 
-- Run: `wb-headset --config`
+- Run: `headset-tui --config`
 - Or press `c` inside the tui to interactively set your bindings.
 
 Default keybindings:
@@ -102,7 +104,7 @@ Launch the interactive TUI:
 > Same as left click on the waybar symbol, but you can also run it directly in the terminal.
 
 ```bash
-wb-headset
+headset-tui
 ```
 
 Get battery status for Waybar:
@@ -110,13 +112,13 @@ Get battery status for Waybar:
 > This prints the exact output thats routed into your waybar
 
 ```bash
-wb-headset --waybar-status
+headset-tui --waybar-status
 ```
 
 Show all options:
 
 ```bash
-wb-headset --help
+headset-tui --help
 ```
 
 ## Testing without a headset
@@ -126,9 +128,9 @@ wb-headset --help
 any other option and in any order:
 
 ```bash
-wb-headset --test                    # TUI with the simulated device
-wb-headset --test --waybar-status    # Waybar JSON from the simulated device
-wb-headset --toggle-sidetone --test  # Toggle sidetone on the simulated device
+headset-tui --test                    # TUI with the simulated device
+headset-tui --test --waybar-status    # Waybar JSON from the simulated device
+headset-tui --toggle-sidetone --test  # Toggle sidetone on the simulated device
 ```
 
 The simulated device reports a battery level of 42% and advertises sidetone
@@ -140,7 +142,7 @@ Notes:
 - `--test` requires a HeadsetControl build that ships `--test-device`
   (`headsetcontrol --help-all` lists it under `ADVANCED`).
 - Toggle state is kept in a separate file
-  (`~/.cache/wb-headsetcontrol-sidetone-state.test`), so testing never changes
+  (`~/.cache/headset-tui-sidetone-state.test`), so testing never changes
   the state of a real headset.
 - The mock device is created per invocation and does not keep modifications
   between two calls, so the TUI always starts from its defaults.

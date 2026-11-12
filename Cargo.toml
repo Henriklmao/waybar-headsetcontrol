@@ -1,10 +1,13 @@
 [package]
-name = "waybar"
+name = "headset-tui"
 version = "0.1.5"
 edition = "2021"
+description = "HeadsetControl integration for Waybar with an interactive TUI"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/Henriklmao/headset-tui"
 
 [[bin]]
-name = "wb-headset"
+name = "headset-tui"
 path = "src/main.rs"
 
 [dependencies]

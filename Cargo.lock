@@ -1675,7 +1675,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "waybar"
+name = "headset-tui"
 version = "0.1.5"
 dependencies = [
  "crossterm",

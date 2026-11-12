@@ -41,7 +41,7 @@ struct Battery {
 /// Flag passed to `headsetcontrol` to make it use its built-in mock device.
 const TEST_DEVICE_FLAG: &str = "--test-device";
 
-/// Arguments `wb-headset` accepts. Anything else is rejected instead of silently
+/// Arguments `headset-tui` accepts. Anything else is rejected instead of silently
 /// falling through to the TUI.
 const KNOWN_FLAGS: [&str; 6] = [
     "--test",
@@ -57,8 +57,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let has_flag = |flag: &str| args.iter().any(|arg| arg == flag);
 
     if let Some(unknown) = args.iter().find(|arg| !KNOWN_FLAGS.contains(&arg.as_str())) {
-        eprintln!("wb-headset: unknown argument '{}'", unknown);
-        eprintln!("Run 'wb-headset --help' for usage.");
+        eprintln!("headset-tui: unknown argument '{}'", unknown);
+        eprintln!("Run 'headset-tui --help' for usage.");
         std::process::exit(2);
     }
 
@@ -198,9 +198,9 @@ fn toggle_sidetone(test_mode: bool) -> Result<(), Box<dyn std::error::Error>> {
     // Use a simple state file to track if sidetone is currently on.
     // In test mode a separate file is used so the real headset state stays untouched.
     let file_name = if test_mode {
-        ".cache/wb-headsetcontrol-sidetone-state.test"
+        ".cache/headset-tui-sidetone-state.test"
     } else {
-        ".cache/wb-headsetcontrol-sidetone-state"
+        ".cache/headset-tui-sidetone-state"
     };
     let state_file = dirs::home_dir()
         .map(|p| p.join(file_name))
@@ -227,13 +227,17 @@ fn toggle_sidetone(test_mode: bool) -> Result<(), Box<dyn std::error::Error>> {
 fn save_toggle_state(path: &std::path::Path, value: &str) {
     if let Some(parent) = path.parent() {
         if let Err(err) = std::fs::create_dir_all(parent) {
-            eprintln!("wb-headset: could not create {}: {}", parent.display(), err);
+            eprintln!(
+                "headset-tui: could not create {}: {}",
+                parent.display(),
+                err
+            );
             return;
         }
     }
 
     if let Err(err) = std::fs::write(path, value) {
-        eprintln!("wb-headset: could not write {}: {}", path.display(), err);
+        eprintln!("headset-tui: could not write {}: {}", path.display(), err);
     }
 }
 
@@ -361,10 +365,10 @@ fn waybar_error(test_mode: bool) -> &'static str {
 fn print_help() {
     println!(
         "\
-wb-headset - HeadsetControl integration for Waybar
+headset-tui - HeadsetControl integration for Waybar
 
 USAGE:
-    wb-headset [OPTIONS]
+    headset-tui [OPTIONS]
 
 OPTIONS:
     (none)              Launch the interactive TUI
@@ -374,7 +378,7 @@ OPTIONS:
     --test              Use HeadsetControl's simulated device instead of a real
                         headset. Only affects commands that talk to a headset,
                         so it combines with any option above, e.g.
-                        `wb-headset --test` or `wb-headset --waybar-status --test`
+                        `headset-tui --test` or `headset-tui --waybar-status --test`
     -h, --help          Show this help
 
 NOTE:
