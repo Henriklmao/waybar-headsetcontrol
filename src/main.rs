@@ -14,12 +14,16 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use std::io;
 use std::process::ExitCode;
+use std::time::{Duration, Instant};
 
 use app::{Outcome, UiState};
 use cli::{Cli, Command, Mode};
 use config::KeyConfig;
 use headset::{Headset, HeadsetControl};
 use input::Action;
+
+/// How often the battery is re-read while the TUI is idle.
+const STATUS_REFRESH: Duration = Duration::from_secs(2);
 
 fn main() -> ExitCode {
     match Cli::parse(std::env::args().skip(1)) {
@@ -120,6 +124,8 @@ fn run_app(
     state: &mut UiState,
     headset: &dyn Headset,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let mut last_refresh = Instant::now();
+
     loop {
         terminal.draw(|frame| {
             ui::draw(frame, state, keys);
@@ -127,9 +133,11 @@ fn run_app(
 
         let action = input::handle_input(keys);
 
-        // Idle ticks refresh the battery display.
-        if action == Action::None {
+        // Idle ticks refresh the battery display. Polling that often would run
+        // headsetcontrol several times per second, so throttle it.
+        if action == Action::None && last_refresh.elapsed() >= STATUS_REFRESH {
             app::apply_status(state, headset.status());
+            last_refresh = Instant::now();
         }
 
         match app::apply_action(action, state, headset) {
@@ -152,6 +160,7 @@ fn run_app(
 
                 *keys = config::load(state.mode).keys;
                 app::apply_status(state, headset.status());
+                last_refresh = Instant::now();
             }
         }
     }
