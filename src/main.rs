@@ -41,7 +41,7 @@ fn main() -> ExitCode {
 fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
         Command::Help => {
-            print!("{}", cli::help_text());
+            println!("{}", cli::help_text());
             Ok(())
         }
         Command::Config => {
