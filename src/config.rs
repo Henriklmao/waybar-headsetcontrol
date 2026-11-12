@@ -85,15 +85,19 @@ pub fn load(mode: Mode) -> Config {
     load_or_create(&config_path(mode))
 }
 
-/// Load a config file, creating it with defaults when missing or unreadable.
+/// Load a config file, creating it with defaults when it does not exist yet.
+///
+/// An existing but unreadable config is left untouched and defaults are used
+/// for this run, so a typo never destroys the user's bindings.
 pub fn load_or_create(path: &Path) -> Config {
-    if let Some(config) = read(path) {
-        return config;
+    match fs::read_to_string(path) {
+        Ok(content) => toml::from_str(&content).unwrap_or_default(),
+        Err(_) => {
+            let config = Config::default();
+            let _ = save_to_path(path, &config);
+            config
+        }
     }
-
-    let config = Config::default();
-    let _ = save_to_path(path, &config);
-    config
 }
 
 /// Read a config file, or `None` when it is missing or invalid.
@@ -580,15 +584,19 @@ quit = \"r\"
     }
 
     #[test]
-    fn load_or_create_repairs_invalid_config() {
+    fn load_or_create_keeps_an_invalid_config_on_disk() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("config.toml");
-        fs::write(&path, "default_sidetone = \"not a number\"\n").unwrap();
+        let broken = "default_sidetone = \"not a number\"\n";
+        fs::write(&path, broken).unwrap();
 
         let loaded = load_or_create(&path);
 
+        // Defaults are used for this run, but the broken file is preserved so a
+        // typo never destroys the user's own bindings.
         assert_eq!(loaded, Config::default());
-        assert_eq!(read(&path), Some(Config::default()));
+        assert_eq!(fs::read_to_string(&path).unwrap(), broken);
+        assert_eq!(read(&path), None);
     }
 
     // -------------------------------------------------------------- dialogs
